@@ -12,7 +12,7 @@ namespace GEDCOM_Console
         {
             StringBuilder personReport = new StringBuilder();
             StringBuilder verboseReport = new StringBuilder();
-            var Builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json",true, true);
+            var Builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json",false, true);
             var config = Builder.Build();
             var masterFileName = config["masterFile:fileName"];
             var comparisonFileName = config["comparisonFile:fileName"];
