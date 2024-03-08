@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.810.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GEDCOM-Console", "GEDCOM-Console\GEDCOM-Console.csproj", "{D326B7D7-78B5-4F51-BB7E-E715DB7D93F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GEDCOM-Library", "GEDCOM-Library\GEDCOM-Library.csproj", "{BC88CB14-36AD-416A-B817-4546C908B4CA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D326B7D7-78B5-4F51-BB7E-E715DB7D93F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D326B7D7-78B5-4F51-BB7E-E715DB7D93F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D326B7D7-78B5-4F51-BB7E-E715DB7D93F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D326B7D7-78B5-4F51-BB7E-E715DB7D93F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC88CB14-36AD-416A-B817-4546C908B4CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC88CB14-36AD-416A-B817-4546C908B4CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC88CB14-36AD-416A-B817-4546C908B4CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC88CB14-36AD-416A-B817-4546C908B4CA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04571D5F-D7E6-4AED-9150-572C0531C06F}
+	EndGlobalSection
+EndGlobal
