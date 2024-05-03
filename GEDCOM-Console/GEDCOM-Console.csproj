@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>GEDCOM_Console</RootNamespace>
   </PropertyGroup>
 
@@ -10,7 +10,8 @@
     <OutputPath>..\..\..\GEDCOM\App\Debug</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType></DebugType>
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
     <OutputPath>..\..\..\GEDCOM\App\Release</OutputPath>
   </PropertyGroup>
   <ItemGroup>
