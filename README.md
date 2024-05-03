@@ -8,4 +8,4 @@ Comparison is completed on Name (Full name) and Date of Birth. Comparison is not
 The report will highlight the values being compared when no match is being found.
 Dates are compared using long and short form. E.g. 2 Feb 2023 would match 2 February 2023 and 02 Feb 2023 BUT NOT 02/02/2023.
 
-Execution currently requires dotnet 6.0.
+Execution currently requires dotnet 8.0.201
