@@ -18,7 +18,7 @@ namespace GEDCOM_Console
             var comparisonFileName = config["comparisonFile:fileName"];
             var masterPersonName = config["masterFile:person"];
             var reportFileName = config["ReportFile"];
-            var matchDOB = config["Matching:matchDOB"];
+            var matchDOB = config["Matching:matchDOB"];            
             var matchDOD = config["Matching:matchDOD"];
             var loggingLevel = LogLevel.Information;
 
