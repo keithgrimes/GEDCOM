@@ -37,18 +37,42 @@ namespace GEDCOM
             FAMS = new List<LinkFamily>();
         }
 
+        static String ToStandardDate(String srcDate)
+        {
+            var cultureInfo = new CultureInfo("en-GB");
+            string stdDate;
+
+            stdDate = srcDate;
+            // Only validate the date if there is one
+            if (srcDate != null)
+            {
+                if (DateTime.TryParse(srcDate, out DateTime newDate))
+                {
+                    stdDate = newDate.ToString(cultureInfo);
+                }
+                else
+                {
+                    stdDate = srcDate;
+                }
+            }
+            return stdDate;
+        }
+
         public Boolean Match(INDI potentialPerson, StringBuilder report)
         {
             // TODO: Match to include both Name and dates of birth and death.
             // Neither have already been matched. 
             var cultureInfo = new CultureInfo("en-GB");
             var thisDOB = "";
-            var potentialDOB = "" ; 
+            var potentialDOB = "";
 
-            try {
-                thisDOB = DateTime.Parse(this.DOB).ToString(cultureInfo);
-                potentialDOB = DateTime.Parse(potentialPerson.DOB).ToString(cultureInfo);
-            } catch (Exception)
+            try
+            {
+                /* NEED TO STANDARDIZE THE DATE FORMAT FOR CONVERSION TO REMOVE THE EXCEPTION HANDLING */
+                thisDOB = INDI.ToStandardDate(this.DOB);
+                potentialDOB = INDI.ToStandardDate(potentialPerson.DOB);
+            }
+            catch (Exception)
             {
                 // Failed to conver to date time so use the strings.
                 thisDOB = this.DOB;
@@ -215,25 +239,41 @@ namespace GEDCOM
 
             if (FAMC != null)
             {
-                // First Report Differences of the Parents
-                if (FAMC.family.Husband != null) FAMC.family.Husband.person.ReportDifferences(verbose, ref MissingCount, familyReport);
-                if (FAMC.family.Wife != null) FAMC.family.Wife.person.ReportDifferences(verbose, ref MissingCount, familyReport);
+                if (FAMC.family != null)
+                {
+                    // First Report Differences of the Parents
+                    if (FAMC.family.Husband != null) FAMC.family.Husband.person.ReportDifferences(verbose, ref MissingCount, familyReport);
+                    if (FAMC.family.Wife != null) FAMC.family.Wife.person.ReportDifferences(verbose, ref MissingCount, familyReport);
+                }
+                else
+                {
+                    familyReport.AppendFormat("Invalid Family for  {0} ({3}) - Family Not Found {2}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB);
+                }
             }
             foreach (var currentFAMS in FAMS)
             {
-                // First Validate the spouse
-
-                if (currentFAMS.family.Husband != null && currentFAMS.family.Wife != null)
+                /* **** Validate Family is a valid one **/
+                if (currentFAMS.family != null)
                 {
-                    partner = (currentFAMS.family.Husband.person == this) ? currentFAMS.family.Wife.person : currentFAMS.family.Husband.person;
+                    // First Validate the spouse
+                    if (currentFAMS.family.Husband != null && currentFAMS.family.Wife != null)
+                    {
+                        partner = (currentFAMS.family.Husband.person == this) ? currentFAMS.family.Wife.person : currentFAMS.family.Husband.person;
+                    }
+                    if (partner != null) partner.ReportDifferences(verbose, ref MissingCount, familyReport);
+
+                    // This person is a head of a family, count the children
+                    foreach (var child in currentFAMS.family.Children)
+                    {
+                        // Report any Children
+                        child.person.ReportDifferences(verbose, ref MissingCount, familyReport);
+                    }
                 }
-                if (partner != null) partner.ReportDifferences(verbose, ref MissingCount, familyReport);
-
-                // This person is a head of a family, count the children
-                foreach (var child in currentFAMS.family.Children)
+                else
                 {
-                    // Report any Children
-                    child.person.ReportDifferences(verbose, ref MissingCount,familyReport);
+                    // Despite there being a FAMS record, the family does not exist.
+                    // Record the issue to the log. 
+                    familyReport.AppendFormat("Invalid Family for  {0} ({3}) - Family Not Found {2}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB);
                 }
             }
         }
@@ -482,13 +522,10 @@ namespace GEDCOM
                 } else
                 {
                     int day ; 
-                    try {
-                        day = int.Parse(sday);
-                        sday = day.ToString();
-                    }
-                    catch (Exception)
+                    bool canParse = int.TryParse(sday, out day);
+                    if (canParse)
                     {
-                        // Do nothing;
+                        sday = day.ToString();
                     }
                 }
                 output = sday + " " + sMonth + " " + sYear;
