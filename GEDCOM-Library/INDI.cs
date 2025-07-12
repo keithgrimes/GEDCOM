@@ -179,8 +179,8 @@ namespace GEDCOM
 
                                         }
 
-                                        // Now we have done the parents, We need to match any children. 
-                                        if (appConfig.MatchChildren && !currentFAMS.family.FlagExists(appConfig.flgIgnoreDescendents))
+                                        // Now we have done the parents, We need to match any children (unless this is not blood line or you have chosen not to)
+                                        if (appConfig.MatchChildren && !currentFAMS.family.FlagExists(appConfig.flgIgnoreDescendents) && !currentFAMS.family.FlagExists(appConfig.flgNotBloodLine))
                                         {
                                             // We need to iterate the children, We cannot assume that they are listed in the same order
 
