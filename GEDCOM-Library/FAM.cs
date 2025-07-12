@@ -25,6 +25,15 @@ namespace GEDCOM
             Flags = new List<String>();
         }
 
+        public bool FlagExists(string flg)
+        {
+            foreach (string f in Flags)
+            {
+                if (f.ToUpper().Trim() == flg.ToUpper().Trim()) return true;
+            }
+            return false;
+        }
+
         public void Parse()
         {
             if (this.id == "@300@") Debugger.Break();
