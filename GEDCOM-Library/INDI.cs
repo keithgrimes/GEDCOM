@@ -94,13 +94,13 @@ namespace GEDCOM
             }
         }
 
-        public void MatchIterative(INDI potentialPerson, Boolean MatchParents, Boolean MatchSpouse, Boolean MatchChildren, StringBuilder report, LogLevel loggingLevel)
+        public void MatchIterative(INDI potentialPerson, StringBuilder report, CONFIG appConfig)
         {
             // Only try to match if we have not done already and the person we are matching to is not already matched
             if (personMatch == null && potentialPerson.personMatch == null)
             {
                 if (this.Name.ToUpper().Contains("not set")) Debugger.Break();
-                if (loggingLevel == LogLevel.Trace) report.AppendFormat("Commencing Match Iterative for {0}({1}) with {2}({3}){4}", this.Name, this.DOB, potentialPerson.Name, potentialPerson.DOB, Environment.NewLine);
+                if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("Commencing Match Iterative for {0}({1}) with {2}({3}){4}", this.Name, this.DOB, potentialPerson.Name, potentialPerson.DOB, Environment.NewLine);
                 //Not Matched already - Great. Check to see if this record is a match
                 if (this.Match(potentialPerson, report)) {
                     if (this.Name.ToUpper() == "not set") Debugger.Break();
@@ -108,7 +108,7 @@ namespace GEDCOM
                     this.personMatch = potentialPerson;
                     potentialPerson.personMatch = this;
 
-                    if (MatchParents)
+                    if (appConfig.MatchParents)
                     {
                         // Now we need to try and match the parents.
                         if (this.FAMC != null && potentialPerson.FAMC != null)  // the link to a family as a child.
@@ -116,22 +116,22 @@ namespace GEDCOM
                             // First see if the Father is registered
                             if (this.FAMC.family.Husband != null && potentialPerson.FAMC.family.Husband != null)
                             {
-                                if (loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Father {0} of {1}{2}", this.FAMC.family.Husband.person.Name, this.Name, Environment.NewLine);
+                                if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Father {0} of {1}{2}", this.FAMC.family.Husband.person.Name, this.Name, Environment.NewLine);
 
                                 // Father exists on both sides, so see if they match
-                                this.FAMC.family.Husband.person.MatchIterative(potentialPerson.FAMC.family.Husband.person, true, true, true, report, loggingLevel);
+                                this.FAMC.family.Husband.person.MatchIterative(potentialPerson.FAMC.family.Husband.person, report, appConfig);
                             }
                             // Now see if the mother is registered
                             if (this.FAMC.family.Wife != null && potentialPerson.FAMC.family.Wife != null)
                             {
-                                if (loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Mother {0} of {1}{2}", this.FAMC.family.Wife.person.Name, this.Name, Environment.NewLine);
+                                if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Mother {0} of {1}{2}", this.FAMC.family.Wife.person.Name, this.Name, Environment.NewLine);
                                 // Father exists on both sides, so see if they match
-                                this.FAMC.family.Wife.person.MatchIterative(potentialPerson.FAMC.family.Wife.person, true, true, true, report, loggingLevel);
+                                this.FAMC.family.Wife.person.MatchIterative(potentialPerson.FAMC.family.Wife.person, report, appConfig);
                             }
                         }
                     }
 
-                    if (MatchSpouse || MatchChildren)
+                    if (appConfig.MatchSpouse || appConfig.MatchChildren)
                     {
                         // Check first there is a family.
                         if (this.FAMS != null && potentialPerson.FAMS != null)
@@ -143,10 +143,10 @@ namespace GEDCOM
                                 foreach (var potentialFAMS in potentialPerson.FAMS)
                                 {
                                     // Now see if the is the correct match of family.
-                                    if (currentFAMS.Match(potentialFAMS, report, loggingLevel))
+                                    if (currentFAMS.Match(potentialFAMS, report, appConfig.loggingLevel))
                                     {
                                         // There is a family, so first check the spouse if there is one defined (remember there could be multiple)
-                                        if (MatchSpouse)
+                                        if (appConfig.MatchSpouse)
                                         {
                                             if (currentFAMS.family.Wife != null && potentialFAMS.family.Wife != null)
                                             {
@@ -154,8 +154,8 @@ namespace GEDCOM
                                                 if (currentFAMS.family.Wife.person != this)
                                                 {
                                                     // Compare the Wife
-                                                    if (loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Wife - {1}){2}", this.Name, potentialFAMS.family.Wife.person.Name, Environment.NewLine);
-                                                    currentFAMS.family.Wife.person.MatchIterative(potentialFAMS.family.Wife.person, true, true, true, report, loggingLevel);
+                                                    if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Wife - {1}){2}", this.Name, potentialFAMS.family.Wife.person.Name, Environment.NewLine);
+                                                    currentFAMS.family.Wife.person.MatchIterative(potentialFAMS.family.Wife.person, report, appConfig);
                                                 }
 
                                             }
@@ -165,13 +165,13 @@ namespace GEDCOM
                                                 if (currentFAMS.family.Husband.person != this)
                                                 {
                                                     // Compare the Husband
-                                                    if (loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Husband - {1}){2}", this.Name, potentialFAMS.family.Husband.person.Name, Environment.NewLine);
-                                                    currentFAMS.family.Husband.person.MatchIterative(potentialFAMS.family.Husband.person, true, true, true, report, loggingLevel);
+                                                    if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Husband - {1}){2}", this.Name, potentialFAMS.family.Husband.person.Name, Environment.NewLine);
+                                                    currentFAMS.family.Husband.person.MatchIterative(potentialFAMS.family.Husband.person, report, appConfig);
                                                 }
                                             }
                                         }
                                         // Now we have done the parents, We need to match any children. 
-                                        if (MatchChildren)
+                                        if (appConfig.MatchChildren)
                                         {
                                             // We need to iterate the children, We cannot assume that they are listed in the same order
 
@@ -182,10 +182,10 @@ namespace GEDCOM
                                             {
                                                 foreach (var compareChild in compareChildren)
                                                 {
-                                                    if (loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Child {0} ({1}) of [{2}]{3}", masterChild.person.Name, masterChild.person.id, this.Name, Environment.NewLine);
+                                                    if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Child {0} ({1}) of [{2}]{3}", masterChild.person.Name, masterChild.person.id, this.Name, Environment.NewLine);
 
                                                     // Match the Children but don't need to match parents, as this is where we are coming from.
-                                                    masterChild.person.MatchIterative(compareChild.person, true, true, true, report, loggingLevel);
+                                                    masterChild.person.MatchIterative(compareChild.person, report, appConfig);
                                                 }
                                             }
                                         }
