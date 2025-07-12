@@ -24,6 +24,7 @@ namespace GEDCOM
         public string originalDOD { get; set; }
         public LinkFamily FAMC { get; set; }  // Family Group as Child
         public List<LinkFamily> FAMS { get; set; }  // Family Group as Spouse
+        public List<String> Flags { get; set; }
         public INDI personMatch { get; set; } // the Matched Person
         public bool reportIncluded = false;
 
@@ -35,6 +36,7 @@ namespace GEDCOM
             DOB = "";
             personMatch = null;
             FAMS = new List<LinkFamily>();
+            Flags = new List<String>();
         }
 
         static String ToStandardDate(String srcDate)
@@ -581,6 +583,10 @@ namespace GEDCOM
                         break;
                     case "FAMC":
                         FAMC = new LinkFamily(line.Details);
+                        break;
+                    case "LABL":
+                        // This is a family label so record it.
+                        this.Flags.Add(line.Details);
                         break;
                     default:
                         break;

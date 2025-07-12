@@ -42,11 +42,13 @@ namespace GEDCOM
             foreach (var person in people)
             {
                 person.Parse();
+                // You can only be a child in one family, so find it (if it exists)
                 if (person.FAMC != null) person.FAMC.family = FindFamily(person.FAMC.id, families);
                 // if (person.FAMS.Count > 1) Debugger.Break();
          
+                // You can be a spouse in more than one family, so find them all. 
                 foreach (var currentFAMS in person.FAMS)
-                {                    
+                {
                     currentFAMS.family = FindFamily(currentFAMS.id, families);
                 }
 
