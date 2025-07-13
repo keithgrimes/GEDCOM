@@ -145,42 +145,34 @@ namespace GEDCOM
                                     // Now see if the is the correct match of family.
                                     if (currentFAMS.Match(potentialFAMS, report, appConfig.loggingLevel))
                                     {
-                                        if (!currentFAMS.family.FlagExists(appConfig.flgNotBloodLine))
+                                        // There is a family, so first check the spouse if there is one defined (remember there could be multiple)
+                                        if (appConfig.MatchSpouse)
                                         {
-                                            // There is a family, so first check the spouse if there is one defined (remember there could be multiple)
-                                            if (appConfig.MatchSpouse)
+                                            if (currentFAMS.family.Wife != null && potentialFAMS.family.Wife != null)
                                             {
-                                                if (currentFAMS.family.Wife != null && potentialFAMS.family.Wife != null)
+                                                // There is a wife, and it does not match
+                                                if (currentFAMS.family.Wife.person != this)
                                                 {
-                                                    // There is a wife, and it does not match
-                                                    if (currentFAMS.family.Wife.person != this)
-                                                    {
-                                                        // Compare the Wife
-                                                        if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Wife - {1}){2}", this.Name, potentialFAMS.family.Wife.person.Name, Environment.NewLine);
-                                                        currentFAMS.family.Wife.person.MatchIterative(potentialFAMS.family.Wife.person, report, appConfig);
-                                                    }
-
+                                                    // Compare the Wife
+                                                    if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Wife - {1}){2}", this.Name, potentialFAMS.family.Wife.person.Name, Environment.NewLine);
+                                                    currentFAMS.family.Wife.person.MatchIterative(potentialFAMS.family.Wife.person, report, appConfig);
                                                 }
-                                                if (currentFAMS.family.Husband != null && potentialFAMS.family.Husband != null)
+
+                                            }
+                                            if (currentFAMS.family.Husband != null && potentialFAMS.family.Husband != null)
+                                            {
+                                                // There is a husband, and it does not match
+                                                if (currentFAMS.family.Husband.person != this)
                                                 {
-                                                    // There is a husband, and it does not match
-                                                    if (currentFAMS.family.Husband.person != this)
-                                                    {
-                                                        // Compare the Husband
-                                                        if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Husband - {1}){2}", this.Name, potentialFAMS.family.Husband.person.Name, Environment.NewLine);
-                                                        currentFAMS.family.Husband.person.MatchIterative(potentialFAMS.family.Husband.person, report, appConfig);
-                                                    }
+                                                    // Compare the Husband
+                                                    if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("{0} - Matching Spouse (Husband - {1}){2}", this.Name, potentialFAMS.family.Husband.person.Name, Environment.NewLine);
+                                                    currentFAMS.family.Husband.person.MatchIterative(potentialFAMS.family.Husband.person, report, appConfig);
                                                 }
                                             }
                                         }
-                                        else
-                                        {
-                                            if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("Not Bloodline Family (Husband/Wife) - {0}/{1}{2}", currentFAMS.family.Husband.person.Name, currentFAMS.family.Wife.person.Name,Environment.NewLine);
-
-                                        }
 
                                         // Now we have done the parents, We need to match any children (unless this is not blood line or you have chosen not to)
-                                        if (appConfig.MatchChildren && !currentFAMS.family.FlagExists(appConfig.flgIgnoreDescendents) && !currentFAMS.family.FlagExists(appConfig.flgNotBloodLine))
+                                        if (appConfig.MatchChildren)
                                         {
                                             // We need to iterate the children, We cannot assume that they are listed in the same order
 
@@ -229,7 +221,7 @@ namespace GEDCOM
                     {
                         //this is the start of someone who does not have a match.
                         reportFamilyDifferences(verbose, ref MissingCount, personReport);
-                        personReport.AppendFormat("Missing Person {0} ({3}) - Ancestor/Decendents {1}{2}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB);
+                        personReport.AppendFormat("Missing Person {0} ({3}) - Ancestor/Decendents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB);
 
                         // Reset as we have now reported for this person.
                         MissingCount = 0;
@@ -275,7 +267,7 @@ namespace GEDCOM
                     {
                         partner = (currentFAMS.family.Husband.person == this) ? currentFAMS.family.Wife.person : currentFAMS.family.Husband.person;
                     }
-                    if (partner != null) partner.ReportDifferences(verbose, ref MissingCount, familyReport);
+                    partner?.ReportDifferences(verbose, ref MissingCount, familyReport);
 
                     // This person is a head of a family, count the children
                     foreach (var child in currentFAMS.family.Children)
