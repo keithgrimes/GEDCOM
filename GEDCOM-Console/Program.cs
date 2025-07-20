@@ -3,6 +3,7 @@ using GEDCOM;
 using Microsoft.Extensions.Configuration;
 using System.Text;
 using System.IO;
+using Microsoft.Extensions.FileProviders;
 
 namespace GEDCOM_Console
 {
@@ -22,6 +23,7 @@ namespace GEDCOM_Console
             var matchDOB = config["Matching:matchDOB"];
             var matchDOD = config["Matching:matchDOD"];
             var loggingLevel = LogLevel.Information;
+            
 
             appConfig.masterFileName = masterFileName;
             appConfig.comparisonFileName = comparisonFileName;
@@ -29,6 +31,7 @@ namespace GEDCOM_Console
             appConfig.reportFileName = reportFileName;
             appConfig.matchDOB = matchDOB;
             appConfig.matchDOD = matchDOD;
+            //appConfig.BreakPersonId = "@11808996@";
 
             appConfig.flgNotBloodLine = config["Labels:NotBloodLine"];
             appConfig.flgIgnoreDescendents = config["Labels:IgnoreDescendents"];
@@ -77,9 +80,9 @@ namespace GEDCOM_Console
             personReport.AppendFormat("***************  Generating Report *****************{0}", Environment.NewLine);
 
             int MissingCount = 0;
-            masterPerson.ReportDifferences(true, ref MissingCount, personReport);
+            masterPerson.ReportDifferences(true, ref MissingCount, personReport, appConfig);
             personReport.AppendFormat("{0}{0} ******************** Non Linked People **************{0}", Environment.NewLine);
-            masterFile.ListNotUsed(personReport);
+            masterFile.ListNotUsed(personReport, appConfig);
 
             personReport.AppendFormat("Processing Complete{0}", Environment.NewLine);
 

@@ -21,6 +21,8 @@ namespace GEDCOM
         public bool MatchChildren { get; set;}
         public bool MatchSpouse { get; set;}
         public bool MatchParents { get; set;}
+        public string BreakPersonId { get; set; }
+
         public CONFIG()
         {
             // ID is going to be on the first record
@@ -36,6 +38,7 @@ namespace GEDCOM
             MatchChildren = true;
             MatchSpouse = true;
             MatchParents = true;
+            BreakPersonId = "";
         }
         
         private string DebuggerDisplay

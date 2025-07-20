@@ -24,7 +24,6 @@ namespace GEDCOM
             Children = new List<LinkPerson>();
             Flags = new List<String>();
         }
-
         public bool FlagExists(string flg)
         {
             foreach (string f in Flags)

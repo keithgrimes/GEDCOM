@@ -91,14 +91,13 @@ namespace GEDCOM
             }
         }
 
-        public void ListNotUsed(StringBuilder report)
+        public void ListNotUsed(StringBuilder report, CONFIG appConfig)
         {
             foreach (var person in people)
             {
                 if ( !person.reportIncluded)
                 {
-                    // This person is not included in the report
-                    report.AppendFormat("{2} - {0}({1}) Not included within Tree Structure {3}", person.Name, person.DOB, person.id, Environment.NewLine);
+                    report.AppendFormat("{2} - {0}({1}) Not included within Tree Structure {3}", person.Name, person.DOB, person.id, Environment.NewLine);                        
                 }
             }
         }
