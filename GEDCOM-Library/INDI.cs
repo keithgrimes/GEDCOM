@@ -229,13 +229,13 @@ namespace GEDCOM
                     {
                         //this is the start of someone who does not have a match.
                         reportFamilyDifferences(verbose, ref MissingCount, personReport, appConfig);
-                        if (this.FAMC != null)
+                        if (this.FAMC != null && this.FAMC.family != null)
                         {
-                            if (!this.FAMC.family.FlagExists(appConfig.flgIgnoreDescendents) && !this.FAMC.family.FlagExists(appConfig.flgNotBloodLine)) personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Decendents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
+                            if (!this.FAMC.family.FlagExists(appConfig.flgIgnoreDescendents) && !this.FAMC.family.FlagExists(appConfig.flgNotBloodLine)) personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Dependents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
                         }
                         else
                         {
-                            personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Decendents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
+                            personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Dependents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
                         }
 
                         // Reset as we have now reported for this person.
