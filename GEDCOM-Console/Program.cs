@@ -3,6 +3,7 @@ using GEDCOM;
 using Microsoft.Extensions.Configuration;
 using System.Text;
 using System.IO;
+using Microsoft.Extensions.FileProviders;
 
 namespace GEDCOM_Console
 {
@@ -10,17 +11,38 @@ namespace GEDCOM_Console
     {
         static void Main(string[] args)
         {
+            CONFIG appConfig = new CONFIG();
             StringBuilder personReport = new StringBuilder();
             StringBuilder verboseReport = new StringBuilder();
-            var Builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json",false, true);
+            var Builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", false, true);
             var config = Builder.Build();
             var masterFileName = config["masterFile:fileName"];
             var comparisonFileName = config["comparisonFile:fileName"];
             var masterPersonName = config["masterFile:person"];
             var reportFileName = config["ReportFile"];
-            var matchDOB = config["Matching:matchDOB"];            
+            var matchDOB = config["Matching:matchDOB"];
             var matchDOD = config["Matching:matchDOD"];
             var loggingLevel = LogLevel.Information;
+            
+
+            appConfig.masterFileName = masterFileName;
+            appConfig.comparisonFileName = comparisonFileName;
+            appConfig.masterPersonName = masterPersonName;
+            appConfig.reportFileName = reportFileName;
+            appConfig.matchDOB = matchDOB;
+            appConfig.matchDOD = matchDOD;
+            //appConfig.BreakPersonId = "@11808996@";
+
+            appConfig.flgNotBloodLine = config["Labels:NotBloodLine"];
+            appConfig.flgIgnoreDescendents = config["Labels:IgnoreDescendents"];
+
+            appConfig.MatchChildren = StrToBool(config["masterFile:MatchChildren"]);
+            appConfig.MatchParents = StrToBool(config["masterFile:MatchParents"]);
+            appConfig.MatchSpouse = StrToBool(config["masterFile:MatchSpouse"]);
+
+
+            // Now hold the flag information
+
 
             switch (config["Logging:LogLevel:Default"].ToUpper())
             {
@@ -32,6 +54,7 @@ namespace GEDCOM_Console
                     loggingLevel = LogLevel.Information;
                     break;
             }
+            appConfig.loggingLevel = loggingLevel;
 
             // Load the master File first
             GEDCOMFile masterFile = new GEDCOMFile(masterFileName);
@@ -43,7 +66,6 @@ namespace GEDCOM_Console
             // Now find the comparison person record
             INDI comparisonPerson = comparisonFile.FindPerson(masterPersonName);
 
-            
             personReport.AppendFormat("MasterFile Statistics: {0}{1}", masterFileName, Environment.NewLine);
             personReport.AppendFormat("People Count: {0}{1}", masterFile.people.Count.ToString(), Environment.NewLine);
             personReport.AppendFormat("Family Count: {0}{1}{1}", masterFile.families.Count, Environment.NewLine);
@@ -53,15 +75,15 @@ namespace GEDCOM_Console
             personReport.AppendFormat("***************  Generating Report *****************{0}", Environment.NewLine);
 
             // We have now loaded the files and got the people to start comparing
-            masterPerson.MatchIterative(comparisonPerson, true, true, true, verboseReport, loggingLevel);
+            masterPerson.MatchIterative(comparisonPerson, verboseReport, appConfig);
 
             personReport.AppendFormat("***************  Generating Report *****************{0}", Environment.NewLine);
 
             int MissingCount = 0;
-            masterPerson.ReportDifferences(true, ref MissingCount, personReport);
+            masterPerson.ReportDifferences(true, ref MissingCount, personReport, appConfig);
             personReport.AppendFormat("{0}{0} ******************** Non Linked People **************{0}", Environment.NewLine);
-            masterFile.ListNotUsed(personReport);
-            
+            masterFile.ListNotUsed(personReport, appConfig);
+
             personReport.AppendFormat("Processing Complete{0}", Environment.NewLine);
 
             if (loggingLevel == LogLevel.Trace)
@@ -88,6 +110,15 @@ namespace GEDCOM_Console
 
             // We have now done the comparison
             Console.WriteLine(personReport.ToString());
+        }
+
+        static bool StrToBool(string str)
+        {
+            if (str.ToUpper().Trim().Equals("FALSE"))
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

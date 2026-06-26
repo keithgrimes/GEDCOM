@@ -14,6 +14,7 @@ namespace GEDCOM
         public LinkPerson Husband { get; set; }
         public LinkPerson Wife { get; set; }
         public List<LinkPerson> Children { get; set; }
+        public List<String> Flags { get; set; }
 
         public FAM(string line) : base(line)
         {
@@ -21,6 +22,15 @@ namespace GEDCOM
             id = this.lines[0].Details;
             // Initialise the Children List
             Children = new List<LinkPerson>();
+            Flags = new List<String>();
+        }
+        public bool FlagExists(string flg)
+        {
+            foreach (string f in Flags)
+            {
+                if (f.ToUpper().Trim() == flg.ToUpper().Trim()) return true;
+            }
+            return false;
         }
 
         public void Parse()
@@ -38,6 +48,10 @@ namespace GEDCOM
                         break;
                     case "CHIL":
                         Children.Add(new LinkPerson(line.Details));
+                        break;
+                    case "LABL":
+                        // This is a family label so record it.
+                        this.Flags.Add(line.Details);
                         break;
                 }
 

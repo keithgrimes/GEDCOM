@@ -42,11 +42,13 @@ namespace GEDCOM
             foreach (var person in people)
             {
                 person.Parse();
+                // You can only be a child in one family, so find it (if it exists)
                 if (person.FAMC != null) person.FAMC.family = FindFamily(person.FAMC.id, families);
                 // if (person.FAMS.Count > 1) Debugger.Break();
          
+                // You can be a spouse in more than one family, so find them all. 
                 foreach (var currentFAMS in person.FAMS)
-                {                    
+                {
                     currentFAMS.family = FindFamily(currentFAMS.id, families);
                 }
 
@@ -89,14 +91,13 @@ namespace GEDCOM
             }
         }
 
-        public void ListNotUsed(StringBuilder report)
+        public void ListNotUsed(StringBuilder report, CONFIG appConfig)
         {
             foreach (var person in people)
             {
                 if ( !person.reportIncluded)
                 {
-                    // This person is not included in the report
-                    report.AppendFormat("{2} - {0}({1}) Not included within Tree Structure {3}", person.Name, person.DOB, person.id, Environment.NewLine);
+                    report.AppendFormat("{2} - {0}({1}) Not included within Tree Structure {3}", person.Name, person.DOB, person.id, Environment.NewLine);                        
                 }
             }
         }
