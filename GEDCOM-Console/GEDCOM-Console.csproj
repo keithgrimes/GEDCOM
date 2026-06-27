@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>GEDCOM_Console</RootNamespace>
     <UserSecretsId>4c7a996a-2875-4f68-af57-3db18899e95d</UserSecretsId>
   </PropertyGroup>
