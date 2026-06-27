@@ -77,6 +77,17 @@ namespace GEDCOM_Console
             // We have now loaded the files and got the people to start comparing
             masterPerson.MatchIterative(comparisonPerson, verboseReport, appConfig);
 
+            /*
+            ** At this point all the data has been loaded. The trees can be queried to see how they have
+            ** been configured. 
+            ** 
+            ** To find a person (Example). Execute in the debug console
+            **      - comparisonFile.people.Find(x=>x.Name.Contains("Thomas Brumwell"))
+            **      - comparisonFile.people.Find(x=>x.id.Contains("@I1224@))
+            **
+            ** These enable you to find specific people within tree structure.
+            */
+
             personReport.AppendFormat("***************  Generating Report *****************{0}", Environment.NewLine);
 
             int MissingCount = 0;

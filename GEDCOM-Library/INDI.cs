@@ -231,6 +231,7 @@ namespace GEDCOM
                         reportFamilyDifferences(verbose, ref MissingCount, personReport, appConfig);
                         if (this.FAMC != null && this.FAMC.family != null)
                         {
+                            //Bug: This will only validate the nearest parent/family. It needs to iterate up the tree.
                             if (!this.FAMC.family.FlagExists(appConfig.flgIgnoreDescendents) && !this.FAMC.family.FlagExists(appConfig.flgNotBloodLine)) personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Dependents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
                         }
                         else
