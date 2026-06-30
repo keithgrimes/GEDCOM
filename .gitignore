@@ -3,4 +3,6 @@ GEDCOM-Console/obj/*
 GEDCOM-Console/bin/*
 GEDCOM-Library/obj/*
 GEDCOM-Library/bin/*
+GEDCOMTests/obj/*
+GEDCOMTests/bin/*
 .vscode/*

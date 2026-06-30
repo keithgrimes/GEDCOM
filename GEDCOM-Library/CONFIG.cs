@@ -1,8 +1,6 @@
-﻿using System;
-using GEDCOM;
-using System.Text;
-using System.IO;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Configuration;
+
 
 namespace GEDCOM
 {
@@ -21,7 +19,6 @@ namespace GEDCOM
         public bool MatchChildren { get; set;}
         public bool MatchSpouse { get; set;}
         public bool MatchParents { get; set;}
-        public string BreakPersonId { get; set; }
 
         public CONFIG()
         {
@@ -38,15 +35,53 @@ namespace GEDCOM
             MatchChildren = true;
             MatchSpouse = true;
             MatchParents = true;
-            BreakPersonId = "";
         }
-        
+        public CONFIG(string configFile)
+        {
+            this.LoadConfiguration(configFile);
+        }       
+
         private string DebuggerDisplay
         {
             get
             {
                 return masterFileName;
             }
+        }
+        static bool StrToBool(string str)
+        {
+            return !str.ToUpper().Trim().Equals("FALSE");
+        }
+        public void LoadConfiguration(string configFile)
+        {
+            var Builder = new ConfigurationBuilder().AddJsonFile(configFile, false, true);
+            var config = Builder.Build();
+            
+            this.masterFileName = config["masterFile:fileName"];
+            this.comparisonFileName = config["comparisonFile:fileName"];
+            this.masterPersonName = config["masterFile:person"];
+            this.reportFileName = config["ReportFile"];
+            this.matchDOB = config["Matching:matchDOB"];
+            this.matchDOD = config["Matching:matchDOD"];
+
+            this.flgNotBloodLine = config["Labels:NotBloodLine"];
+            this.flgIgnoreDescendents = config["Labels:IgnoreDescendents"];
+
+            this.MatchChildren = StrToBool(config["masterFile:MatchChildren"]);
+            this.MatchParents = StrToBool(config["masterFile:MatchParents"]);
+            this.MatchSpouse = StrToBool(config["masterFile:MatchSpouse"]);
+
+            switch (config["Logging:LogLevel:Default"].ToUpper())
+            {
+                case "TRACE":
+                    this.loggingLevel = LogLevel.Trace;
+                    break;
+                default:
+                    // Trace, Debug, Information, Warning, Error, Critical, None
+                    this.loggingLevel = LogLevel.Information;
+                    break;
+            }
+            return;
         }
     }
 }

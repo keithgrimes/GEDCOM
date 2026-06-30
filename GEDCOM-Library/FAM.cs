@@ -35,7 +35,6 @@ namespace GEDCOM
 
         public void Parse()
         {
-            if (this.id == "@300@") Debugger.Break();
             foreach (var line in base.lines)
             {
                 switch (line.Type)

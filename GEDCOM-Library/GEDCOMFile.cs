@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace GEDCOM
@@ -33,8 +30,6 @@ namespace GEDCOM
             // Now you have read the file, parse the records to get the data
             ParseINDI();
             ParseFAM();
-
-            // Now link the records
         }
 
         private void ParseINDI()
@@ -91,23 +86,17 @@ namespace GEDCOM
             }
         }
 
-        public void ListNotUsed(StringBuilder report, CONFIG appConfig)
-        {
-            foreach (var person in people)
-            {
-                if ( !person.reportIncluded)
-                {
-                    report.AppendFormat("{2} - {0}({1}) Not included within Tree Structure {3}", person.Name, person.DOB, person.id, Environment.NewLine);                        
-                }
-            }
-        }
-
         public INDI FindPerson(string Name)
         {
             INDI returnPerson = null;
             foreach (var person in people)
             {
                 if (person.Name == Name) { returnPerson = person; break; }
+            }
+            if (returnPerson != null)
+            {
+                returnPerson.SetInTree();
+                returnPerson.SetBloodLine(true);
             }
             return returnPerson;
         }
