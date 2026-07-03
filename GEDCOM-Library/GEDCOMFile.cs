@@ -21,6 +21,7 @@ namespace GEDCOM
         public List<INDI> people = new List<INDI>();
         public List<SOUR> sources = new List<SOUR>();
         public List<FAM> families = new List<FAM>();
+        public List<LABL> labels = new List<LABL>();
 
         public GEDCOMFile(string filename)
         {
@@ -30,6 +31,7 @@ namespace GEDCOM
             // Now you have read the file, parse the records to get the data
             ParseINDI();
             ParseFAM();
+            ParseLABL();
         }
 
         private void ParseINDI()
@@ -85,7 +87,59 @@ namespace GEDCOM
                 }
             }
         }
+        private void ParseLABL()
+        {
+            foreach (var label in labels)
+            {
+                label.Parse();
+            }
+        }
 
+        public void SetIgnoredDescendents(string flagTitle)
+        {
+            string flagId = null;
+            List<FAM> ignoreFamilyDescendents = null;
+            // Get the code for the flag title
+            flagId = labels.Find(x => x.Description.Equals(flagTitle, StringComparison.CurrentCultureIgnoreCase)).Id;
+
+            // Get a list of families which contain the @L1 flag
+            ignoreFamilyDescendents = families.FindAll(
+            delegate(FAM family)
+            {
+                return (family.Flags.Contains(flagId)); // not matched, not excluded and not bloodline
+            }
+            );
+
+            // Iterate the families who we need to ignore
+            foreach (FAM family in ignoreFamilyDescendents)
+            {
+                // Set the flag for all children of this family
+                foreach (var child in family.Children)
+                {
+                    child.person.isIgnoredDecendent = true;
+                    // But now you need to iterate their spouses and children to set the flag for them as well. This is a recursive function.
+                    SetIgnoredDescendentsAndPartner(child.person);
+
+                }
+            }
+        }
+        private void SetIgnoredDescendentsAndPartner(INDI person)
+        {
+            // Set the flag for all children of this family
+            foreach (var currentFAMS in person.FAMS)
+            {
+                // Ignore both Husband and Wife, appreciate one will have already been done. But we don't know which one was the original person, so set both.
+                currentFAMS.family.Wife.person.isIgnoredDecendent = true;
+                currentFAMS.family.Husband.person.isIgnoredDecendent = true;
+                // Now do all the children of this family
+                foreach (var child in currentFAMS.family.Children)
+                {
+                    child.person.isIgnoredDecendent = true;
+                    // But now you need to iterate their spouses and children to set the flag for them as well. This is a recursive function.
+                    SetIgnoredDescendentsAndPartner(child.person);
+                }
+            }
+        }
         public INDI FindPerson(string Name)
         {
             INDI returnPerson = null;
@@ -118,6 +172,7 @@ namespace GEDCOM
             INDI person;
             SOUR source;
             FAM family;
+            LABL label;
             BaseEntry newRecord = null;
             BaseEntry lastRecord = null;
 
@@ -153,6 +208,11 @@ namespace GEDCOM
                                 families.Add(family);
                                 currentRecord = family;
                                 break;
+                            case "LABL":
+                                label = new LABL(line);
+                                labels.Add(label);
+                                currentRecord = label;
+                                break;
                             default:
                                 currentRecord = null;
                                 break;
@@ -165,7 +225,6 @@ namespace GEDCOM
                         if (newRecord.Type == "CONC")
                         {
                             // This is a continuation of the last record
-
                             lastRecord.appendDetails(newRecord.Details);
                             // Don't include this as a separate record
                         }

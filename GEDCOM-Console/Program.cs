@@ -16,8 +16,10 @@ namespace GEDCOM_Console
 
             // Load the master File first
             GEDCOMFile masterFile = new(appConfig.masterFileName);
+            masterFile.SetIgnoredDescendents("Ignore Descendents");
             // Find the record for the selected person
             INDI masterPerson = masterFile.FindPerson(appConfig.masterPersonName);
+            
 
             // Now load the comparison File
             GEDCOMFile comparisonFile = new (appConfig.comparisonFileName);
