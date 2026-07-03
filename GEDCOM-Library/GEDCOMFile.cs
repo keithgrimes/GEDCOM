@@ -129,8 +129,8 @@ namespace GEDCOM
             foreach (var currentFAMS in person.FAMS)
             {
                 // Ignore both Husband and Wife, appreciate one will have already been done. But we don't know which one was the original person, so set both.
-                currentFAMS.family.Wife.person.isIgnoredDecendent = true;
-                currentFAMS.family.Husband.person.isIgnoredDecendent = true;
+                currentFAMS.family.Wife?.person.isIgnoredDecendent = true;
+                currentFAMS.family.Husband?.person.isIgnoredDecendent = true;
                 // Now do all the children of this family
                 foreach (var child in currentFAMS.family.Children)
                 {

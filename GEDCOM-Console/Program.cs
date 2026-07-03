@@ -60,84 +60,63 @@ namespace GEDCOM_Console
             ** Total number being checked (not matched)) = Total number in tree matched - total number ignored - total number not bloodline not matched
             */
             // First Report people who exist in the tree but don't have a match and were not excluded(ignoreDecendents or notBloodLine)
-            List<INDI> notMatched = null;
-            notMatched = masterFile.people.FindAll(
-            delegate(INDI person)
-            {
-                return (person.isIncludedInTree && person.personMatch != null && !person.isIgnoredDecendent && person.isBloodLine ); // not matched, not excluded and are bloodline
-            }
-            );
 
-            // Second Report people who exist in the tree but were excluded by ignore Descendents (Trace Only)
-            List<INDI> peopleIgnored = null;
-            peopleIgnored = masterFile.people.FindAll(
-            delegate(INDI person)
-            {
-                bool matched = person.personMatch != null? true : false;
-                return (person.isIncludedInTree && person.isIgnoredDecendent); // not matched, excluded and bloodline
-            }
-            );
+            // People who are in the tree 
+            List<INDI> inTree = null;
+            inTree = masterFile.people.FindAll(x=>x.isIncludedInTree); // Total People included in the tree
+            personReport.AppendFormat("Number of people in the tree {0}{1}", inTree.Count, Environment.NewLine);
 
-            // Third Report people who exist in the tree but excluded as they were not of Blood line (Trace Only)
-            List<INDI> notBloodline = null;
-            notBloodline = masterFile.people.FindAll(
-            delegate(INDI person)
-            {
-                return (person.isIncludedInTree && !person.isBloodLine); // not matched, not excluded and not bloodline
-            }
-            );
-
-            // Fourth Report people who are not linked to the tree, 
+            //People who are not in the tree
             List<INDI> notInTree = null;
-            notInTree = masterFile.people.FindAll(
-            delegate(INDI person)
-            {
-                bool matched = person.personMatch != null? true : false;
-                return (!person.isIncludedInTree && (person.isBloodLine || !person.isIgnoredDecendent)); // not included in Tree
-            }
-            );
+            notInTree = masterFile.people.FindAll(x=>!x.isIncludedInTree); // Total People not included in the tree
+            personReport.AppendFormat("Number of people not in the tree {0}{1}", notInTree.Count, Environment.NewLine);
 
-            List<INDI> peopleMatched = null;
-            peopleMatched = masterFile.people.FindAll(
-            delegate(INDI person)
-            {
-                bool matched = person.personMatch != null? true : false;
-                return (person.isIncludedInTree && matched); // not included in Tree
-            }
-            );
+            List<INDI> InTreeIncluded = null;
+            InTreeIncluded = inTree.FindAll(x=>x.isBloodLine && !x.isIgnoredDecendent ); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree AND included {0}{1}", InTreeIncluded.Count, Environment.NewLine);
+            
+            List<INDI> InTreeExcluded = null;
+            InTreeExcluded = inTree.FindAll(x=>!x.isBloodLine || x.isIgnoredDecendent ); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree AND excluded {0}{1}", InTreeExcluded.Count, Environment.NewLine);
+
+            List<INDI> InTreeIncludedMatched = null;
+            InTreeIncludedMatched = InTreeIncluded.FindAll(x=>x.personMatch != null ); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree, included and matched {0}{1}", InTreeIncludedMatched.Count, Environment.NewLine);
+
+            List<INDI> InTreeIncludedNotMatched = null;
+            InTreeIncludedNotMatched = InTreeIncluded.FindAll(x=>x.personMatch == null ); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree, included and not matched {0}{1}", InTreeIncludedNotMatched.Count, Environment.NewLine);
+
+            List<INDI> InTreeExcludedNotBloodLine = null;
+            InTreeExcludedNotBloodLine = InTreeExcluded.FindAll(x=>!x.isBloodLine); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree, excluded due to not Blood Line {0}{1}", InTreeExcludedNotBloodLine.Count, Environment.NewLine);
+
+            List<INDI> InTreeExcludedIgnored = null;
+            InTreeExcludedIgnored = InTreeExcluded.FindAll(x=>x.isIgnoredDecendent); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree, excluded due to being ignored {0}{1}", InTreeExcludedIgnored.Count, Environment.NewLine);
+
+            List<INDI> InTreeExcludedBloodLineAndIgnored = null;
+            InTreeExcludedBloodLineAndIgnored = InTreeExcluded.FindAll(x=>!x.isBloodLine && x.isIgnoredDecendent); // Total People not included in the tree
+            personReport.AppendFormat("Number of people in the tree, excluded due to not Blood Line and being ignored {0}{1}", InTreeExcludedBloodLineAndIgnored.Count, Environment.NewLine);
+
 
             // Now list the details, but first list some counts
 
-            personReport.AppendFormat("Number of people matched in your tree {0}{1}", peopleMatched.Count, Environment.NewLine);
-            personReport.AppendFormat("Number of people not matched (excluding ignored/not blood line) was {0}{1}", notMatched.Count, Environment.NewLine);
-            personReport.AppendFormat("Number of people excluded was {0}{1}", peopleIgnored.Count, Environment.NewLine);
-            personReport.AppendFormat("Number of people not in your blood line was {0}{1}", notBloodline.Count, Environment.NewLine);
-            personReport.AppendFormat("Number of people not in the tree {0}{1}", notInTree.Count, Environment.NewLine);
-            personReport.AppendFormat("Total Count of Above {0}{1}", peopleMatched.Count + notMatched.Count + peopleIgnored.Count + notBloodline.Count + notInTree.Count, Environment.NewLine);
-
-
             personReport.AppendFormat("***************  Generating Report *****************{0}", Environment.NewLine);
 
-            personReport.AppendFormat("{0}***************  People who are not matched or excluded/not Bloodline *****************{0}{0}", Environment.NewLine);
-            foreach(INDI ancestor in notMatched)
+            personReport.AppendFormat("{0}***************  People who are in tree, included and not matched ({1})*****************{0}{0}", Environment.NewLine, InTreeIncludedNotMatched.Count);
+            foreach(INDI ancestor in InTreeIncludedNotMatched)
             {
-                personReport.AppendFormat("{2} - {0} ({1}) Not matched (or excluded by ignoreDescendent or notBloodline){3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+                personReport.AppendFormat("{2} - {0} ({1}) Not matched{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
             }
-            personReport.AppendFormat("{0}***************  People who are excluded due to Ancestor/descendent Exclusion (ignoreDecendents) *****************{0}{0}", Environment.NewLine);
-            foreach(INDI ancestor in peopleIgnored)
+
+            personReport.AppendFormat("{0}***************  People who are in tree, Excluded due to Ignored and not Blood Line ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedBloodLineAndIgnored.Count);
+            
+            foreach(INDI ancestor in InTreeExcludedBloodLineAndIgnored)
             {
-                personReport.AppendFormat("{2} - {0} ({1}) Ignored by Ancestor Exclusion{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+                personReport.AppendFormat("{2} - {0} ({1}) Ignored & Not Blood Line {3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
             }
-            personReport.AppendFormat("{0}***************  People who are not in your bloodline *****************{0}{0}", Environment.NewLine);
-            foreach(INDI ancestor in notBloodline)
-            {
-                personReport.AppendFormat("{2} - {0} ({1}) Due to not being bloodline{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
-            }
-            personReport.AppendFormat("{0}***************  People who are not included within your tree *****************{0}{0}", Environment.NewLine);
-            foreach(INDI ancestor in notInTree)
-            {
-                personReport.AppendFormat("{2} - {0} ({1}) Not within the master persons tree.{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
-            }
+
 
             //int MissingCount = 0;
             //masterPerson.ReportDifferences(true, ref MissingCount, personReport, appConfig);
