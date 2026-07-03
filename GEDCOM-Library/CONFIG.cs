@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
-
-
 namespace GEDCOM
 {
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
