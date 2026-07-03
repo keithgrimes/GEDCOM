@@ -49,13 +49,22 @@ namespace GEDCOM_Console
             ** These enable you to find specific people within tree structure.
             */
 
+
+            /*
+            ** Summary stats
+            ** 
+            ** Total number of people in the master file = Total number included in tree + Total number not included in tree
+            ** Total number included in tree = Total number in tree matched + Total number in tree not matched
+            ** Total number to check = Total number in tree - total number ignored - total number not bloodline
+            ** Total number to check (matched) = Total number in tree matched - total number ignored - total number not bloodline where matched
+            ** Total number being checked (not matched)) = Total number in tree matched - total number ignored - total number not bloodline not matched
+            */
             // First Report people who exist in the tree but don't have a match and were not excluded(ignoreDecendents or notBloodLine)
             List<INDI> notMatched = null;
             notMatched = masterFile.people.FindAll(
             delegate(INDI person)
             {
-                bool matched = person.personMatch != null? true : false;
-                return (person.isIncludedInTree && !matched && !person.isIgnoredDecendent && person.isBloodLine ); // not matched, not excluded and are bloodline
+                return (person.isIncludedInTree && person.personMatch != null && !person.isIgnoredDecendent && person.isBloodLine ); // not matched, not excluded and are bloodline
             }
             );
 

@@ -248,30 +248,7 @@ namespace GEDCOM
                 }
                 // This person did not match. 
             }
-        }
-       
-        public LinkFamily findFlagRecursive(string flag)
-        {
-            // returns the LinkFamily where the isIgnored Flag has been set
-            // If not exists, then null
-            LinkFamily match = null;
-            if (this.FAMC != null) // Check there are some parents (could be top of the tree)
-            {
-                if (this.FAMC.family != null)
-                {
-                    if (this.FAMC.family.FlagExists(flag)) match = this.FAMC;
-                    if (match == null)
-                    {
-                        // Still no match so need to look further up the tree.
-                        // Check if the father was ignored (assuming there was a father)
-                        if (this.FAMC.family.Husband != null) match = this.FAMC.family.Husband.person.findFlagRecursive(flag);
-                        // If the husband was not ignored, try the mothers line (if one exists)
-                        if (match == null & this.FAMC.family.Wife != null) match = this.FAMC.family.Wife.person.findFlagRecursive(flag);
-                    }                                    
-                }
-            }
-            return match;
-        }
+        }       
 
         private int ParseName(int idxLine)
         {
