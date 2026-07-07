@@ -1,8 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 namespace GEDCOM
 {
-    [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class CONFIGReporting
     {
         public bool reportIncludedinTreeNotMatched { get; set;}
@@ -11,6 +10,7 @@ namespace GEDCOM
         public bool reportExcluded { get; set;}
         public bool reportExcludedAndNotBloodLine { get; set;}
         public bool reportUnmatchedFamilies { get; set; }
+        public string filename {get; set;}
 
         public CONFIGReporting()
         {
@@ -21,6 +21,7 @@ namespace GEDCOM
             reportExcluded = false;
             reportExcludedAndNotBloodLine = false;
             reportUnmatchedFamilies = false;
+            filename = "";
         }
         private string DebuggerDisplay
         {
@@ -30,103 +31,81 @@ namespace GEDCOM
             }
         }
     }
-    [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public class CONFIG
+    public class CONFIGMasterFile
     {
-        public string masterFileName { get; set;}
-        public string comparisonFileName { get; set;}
-        public string masterPersonName { get; set;}
-        public string reportFileName { get; set;}
-        public string matchDOB { get; set;}            
-        public string matchDOD { get; set;}
-        public GEDCOM.LogLevel loggingLevel { get; set;}
-        public string flgNotBloodLine { get; set;}
-        public string flgIgnoreDescendents { get; set;}
+        public string filePath {get; set;}
+        public string fileName {get; set;}
+        public CONFIGReporting Reporting {get; set;}
+
+        public CONFIGMasterFile()
+        {
+            filePath = "";
+            fileName = "";
+        }
+        public CONFIGMasterFile(string name, string path)
+        {
+            filePath = path;
+            fileName = name;
+        }
+    }
+    public class CONFIGComparisonFile
+    {
+        public string filePath {get; set;}
+        public string fileName {get; set;}
+        public bool Include {get; set;}
+        public CONFIGReporting Reporting {get; set;}
+
+        public CONFIGComparisonFile()
+        {
+            filePath = "";
+            fileName = "";
+            Include = false;
+        }
+        public CONFIGComparisonFile(string name, string path)
+        {
+            filePath = path;
+            fileName = name;
+            Include = false;
+        }
+    }
+    public class BaseConfiguration
+    {
+        public string MasterPerson {get; set;}
         public bool IncludeIgnoredDescendents { get; set;}
         public bool MatchChildren { get; set;}
         public bool MatchSpouse { get; set;}
         public bool MatchParents { get; set;}
+        public bool MatchDOB {get; set;}
+        public bool MatchDOD {get; set;}
+        public string IgnoreDescendents {get; set;}
+        public string FullReport {get; set;}
+        public GEDCOM.LogLevel LogLevel {get; set;}
+    }
+    
+    public class CONFIG
+    {
+        public BaseConfiguration baseConfiguration ;
+        public CONFIGMasterFile masterConfiguration;
+        public List<CONFIGComparisonFile> comparisonConfiguration;
+        public List<CONFIGComparisonFile> comparisonFiles = [];
 
-        public CONFIGReporting MasterFileReporting = new ();
-        public CONFIGReporting ComparisonFileReporting = new ();
-
-        public CONFIG()
-        {
-            // ID is going to be on the first record
-            masterFileName = "";
-            comparisonFileName = "";
-            matchDOB = "";
-            matchDOD = "";
-            loggingLevel = GEDCOM.LogLevel.Information;
-            reportFileName = "";
-            masterPersonName = "";
-            flgIgnoreDescendents = "";
-            MatchChildren = true;
-            MatchSpouse = true;
-            MatchParents = true;
-            IncludeIgnoredDescendents = false;
-        }
         public CONFIG(string configFile)
-        {
-            this.LoadConfiguration(configFile);
-        }       
-
-        private string DebuggerDisplay
-        {
-            get
-            {
-                return masterFileName;
-            }
-        }
-        static bool StrToBool(string str)
-        {
-            return !str.ToUpper().Trim().Equals("FALSE");
-        }
-        public void LoadConfiguration(string configFile)
         {
             var Builder = new ConfigurationBuilder().AddJsonFile(configFile, false, true);
             var config = Builder.Build();
-            
-            this.masterFileName = config["masterFile:fileName"];
-            this.comparisonFileName = config["comparisonFile:fileName"];
-            this.masterPersonName = config["masterFile:person"];
-            this.reportFileName = config["ReportFile"];
-            this.matchDOB = config["Matching:matchDOB"];
-            this.matchDOD = config["Matching:matchDOD"];
 
-            this.flgIgnoreDescendents = config["Labels:IgnoreDescendents"];
+            // Get the master and comparison file configuration    
+            baseConfiguration = config.GetSection("Configuration").Get<BaseConfiguration>();   
+            masterConfiguration = config.GetSection("masterFile").Get<CONFIGMasterFile>();     
+            comparisonConfiguration = config.GetSection("comparisonFiles").Get<List<CONFIGComparisonFile>>();
 
-            this.MatchChildren = StrToBool(config["masterFile:MatchChildren"]);
-            this.MatchParents = StrToBool(config["masterFile:MatchParents"]);
-            this.MatchSpouse = StrToBool(config["masterFile:MatchSpouse"]);
-            this.IncludeIgnoredDescendents = StrToBool(config["masterFile:IncludeIgnoredDescendents"]);
-
-            // Load the reporting configuration for the master file
-            this.MasterFileReporting.reportIncludedinTreeNotMatched = StrToBool(config["masterFile:Reporting:reportIncludedinTreeNotMatched"]);
-            this.MasterFileReporting.reportNotIncludedinTree = StrToBool(config["masterFile:Reporting:reportNotIncludedinTree"]);
-            this.MasterFileReporting.reportNotBloodLine = StrToBool(config["masterFile:Reporting:reportNotBloodLine"]);
-            this.MasterFileReporting.reportExcluded = StrToBool(config["masterFile:Reporting:reportExcluded"]); 
-            this.MasterFileReporting.reportExcludedAndNotBloodLine = StrToBool(config["masterFile:Reporting:reportExcludedAndNotBloodLine"]);
-            this.MasterFileReporting.reportUnmatchedFamilies = StrToBool(config["masterFile:Reporting:reportUnmatchedFamilies"]);
-
-            // Load the reporting configuration for the comparison file
-            this.ComparisonFileReporting.reportIncludedinTreeNotMatched = StrToBool(config["comparisonFile:Reporting:reportIncludedinTreeNotMatched"]);
-            this.ComparisonFileReporting.reportNotIncludedinTree = StrToBool(config["comparisonFile:Reporting:reportNotIncludedinTree"]);
-            this.ComparisonFileReporting.reportNotBloodLine = StrToBool(config["comparisonFile:Reporting:reportNotBloodLine"]);
-            this.ComparisonFileReporting.reportExcluded = StrToBool(config["comparisonFile:Reporting:reportExcluded"]); 
-            this.ComparisonFileReporting.reportExcludedAndNotBloodLine = StrToBool(config["comparisonFile:Reporting:reportExcludedAndNotBloodLine"]);
-            this.ComparisonFileReporting.reportUnmatchedFamilies = StrToBool(config["comparisonFile:Reporting:reportUnmatchedFamilies"]);
-            switch (config["Logging:LogLevel:Default"].ToUpper())
+            // Remove any comparisons that have been excluded
+            List<CONFIGComparisonFile> exclude = comparisonConfiguration.FindAll(x=>x.Include == false);
+            foreach(CONFIGComparisonFile file in exclude)
             {
-                case "TRACE":
-                    this.loggingLevel = LogLevel.Trace;
-                    break;
-                default:
-                    // Trace, Debug, Information, Warning, Error, Critical, None
-                    this.loggingLevel = LogLevel.Information;
-                    break;
+                comparisonConfiguration.Remove(file);
             }
             return;
-        }
+        }       
     }
 }
