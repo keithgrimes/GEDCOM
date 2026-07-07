@@ -12,6 +12,7 @@ namespace GEDCOM
         public LinkPerson Wife { get; set; }
         public List<LinkPerson> Children { get; set; }
         public List<String> Flags { get; set; }
+        public FAM familyMatch { get; set; }
 
         public FAM(string line) : base(line)
         {
@@ -52,6 +53,54 @@ namespace GEDCOM
                 }
 
             }
+        }
+
+        public override int GetHashCode()
+        {
+            // Create hash based on content, not reference
+            var hashCode = new HashCode();
+            hashCode.Add(Husband?.person?.Name);
+            hashCode.Add(Wife?.person?.Name);
+            return hashCode.ToHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            bool matched = false;
+            bool husbandMatched = false;
+            bool wifeMatched = false;
+            if (obj is not FAM fam) return false;
+
+            // There is a Husband and Wife in this family so use this to validate
+            if (this.Husband.person?.personMatch != null && this.Wife.person?.personMatch != null)
+            {
+                // The husband has a person match so use that to compare instead of the person object.
+                matched = ( fam.Husband.person?.personMatch == this.Husband.person)
+                                &&
+                            (fam.Wife.person.personMatch == this.Wife.person) ? true : false;
+
+                return matched;
+            }
+
+            // So now at least match the mother or father (depending upon which one is there)
+            if (this.Husband.person?.personMatch != null) husbandMatched = fam.Husband.person?.personMatch == this.Husband.person;
+            if (this.Wife.person?.personMatch != null) wifeMatched = fam.Wife.person?.personMatch == this.Wife.person;
+            
+            // At this point there is only 1 parent in the family. Try the children to see if their parents match
+            if ((husbandMatched || wifeMatched) && this.Children.Count > 0)
+            {
+                // Take the first child of the family and see if they have a person match.
+                INDI child = this.Children[0].person;
+                if (child.personMatch != null) // Check they had a match
+                {
+                    // Now start matching this person's parents across trees.
+                    if (husbandMatched) matched = (child.personMatch.FAMC.family.Husband.person.personMatch == this.Husband.person) ? true : false;
+                    if (!matched && wifeMatched) matched = (child.personMatch.FAMC.family.Wife.person.personMatch == this.Wife.person) ? true : false;
+                    return matched;
+                }
+            }
+ 
+            return (fam.Husband.person.Equals(this.Husband.person) && fam.Wife.person.Equals(this.Wife.person));
         }
 
         public override string ToString()

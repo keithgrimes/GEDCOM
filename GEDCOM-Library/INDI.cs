@@ -112,26 +112,8 @@ namespace GEDCOM
 
         public Boolean Match(INDI potentialPerson, StringBuilder report)
         {
-            // TODO: Match to include both Name and dates of birth and death.
-            // Neither have already been matched. 
-            var cultureInfo = new CultureInfo("en-GB");
-            var thisDOB = "";
-            var potentialDOB = "";
-            
-            // Now lets see if they have a match
-            try
-            {
-                /* NEED TO STANDARDIZE THE DATE FORMAT FOR CONVERSION TO REMOVE THE EXCEPTION HANDLING */
-                thisDOB = INDI.ToStandardDate(this.DOB);
-                potentialDOB = INDI.ToStandardDate(potentialPerson.DOB);
-            }
-            catch (Exception)
-            {
-                // Failed to conver to date time so use the strings.
-                thisDOB = this.DOB;
-                potentialDOB = potentialPerson.DOB;
-            }
-            if (this.Name.Trim().ToUpper() == potentialPerson.Name.Trim().ToUpper() && thisDOB.Trim().ToUpper() == potentialDOB.Trim().ToUpper())
+            // See if they are the same
+            if (this.Equals(potentialPerson))
             {
                 // Name and Date of Birth Match - this is a match
                 // Provide a two way match
@@ -145,6 +127,49 @@ namespace GEDCOM
             }
         }
 
+        public override bool Equals(object obj)
+        {
+            INDI person = obj as INDI;
+
+            if (person == null)
+                return false; 
+
+            var cultureInfo = new CultureInfo("en-GB");
+            var thisDOB = "";
+            var potentialDOB = "";
+            
+            // Now lets see if they have a match
+            try
+            {
+                /* NEED TO STANDARDIZE THE DATE FORMAT FOR CONVERSION TO REMOVE THE EXCEPTION HANDLING */
+                thisDOB = INDI.ToStandardDate(this.DOB);
+                potentialDOB = INDI.ToStandardDate(person.DOB);
+            }
+            catch (Exception)
+            {
+                // Failed to conver to date time so use the strings.
+                thisDOB = this.DOB;
+                potentialDOB = person.DOB;
+            }
+            if (this.Name.Trim().ToUpper() == person.Name.Trim().ToUpper() && thisDOB.Trim().ToUpper() == potentialDOB.Trim().ToUpper())
+            {
+                // Name and Date of Birth Match - this is a match
+                // Provide a two way match
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public override int GetHashCode()
+        {
+            // Create hash based on content, not reference
+            var hashCode = new HashCode();
+            hashCode.Add(Name);
+            hashCode.Add(DOB);
+            return hashCode.ToHashCode();
+        }
         public void MatchIterative(INDI potentialPerson, StringBuilder report, CONFIG appConfig)
         {
             // Only try to match if we have not done already and the person we are matching to is not already matched

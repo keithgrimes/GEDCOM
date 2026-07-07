@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -22,9 +23,11 @@ namespace GEDCOM
         public List<SOUR> sources = new List<SOUR>();
         public List<FAM> families = new List<FAM>();
         public List<LABL> labels = new List<LABL>();
+        public string path = "";
 
         public GEDCOMFile(string filename)
         {
+            path = filename;
             // First Read the file
             ReadFile(filename);
 
@@ -140,6 +143,54 @@ namespace GEDCOM
                 }
             }
         }
+
+        public void CopyIgnoredFamiliesToLinkedFamilies()
+        {
+            foreach (var family in families)
+            {
+                // Copy the flag to the linked family
+                family.familyMatch?.Flags = [.. family.Flags];
+            }
+        }
+
+        public void MatchFamilies(StringBuilder report)
+        {
+            foreach (var family in families)
+            {
+                // First see if there are children in the family. If there are, this is easier as
+                // children only have a single set of parents, where parents can belong to multiple families.
+                if (family.Children.Count > 0)
+                {
+                    // There are children, so use one of them to find the correct matching. Ensuring they have a person match
+                    INDI child = family.Children.Find(x=>x.person.personMatch != null)?.person;
+                    if (child != null){
+                        family.familyMatch = child.personMatch.FAMC?.family;
+                        child.personMatch.FAMC?.family.familyMatch = family;
+                    }
+                }
+
+                // Still not matched, so either there were not children, or those that were did not have matches
+                if (family.familyMatch == null)
+                {
+                    INDI husband = family.Husband?.person;
+                    INDI wife = family.Wife?.person;
+                    if (husband != null && wife != null &&husband.personMatch != null && wife.personMatch != null)
+                    {
+                        foreach (var potentialFamily in husband.personMatch.FAMS)
+                        {
+                            INDI potentialWife = potentialFamily.family.Wife?.person;
+                            if (potentialWife != null && potentialWife.personMatch.Equals(wife))
+                            {
+                                family.familyMatch = potentialFamily.family;
+                                potentialFamily.family.familyMatch = family;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         public INDI FindPerson(string Name)
         {
             INDI returnPerson = null;
