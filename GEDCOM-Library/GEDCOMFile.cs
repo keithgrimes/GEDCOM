@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace GEDCOM
@@ -24,17 +22,19 @@ namespace GEDCOM
         public List<INDI> people = new List<INDI>();
         public List<SOUR> sources = new List<SOUR>();
         public List<FAM> families = new List<FAM>();
+        public List<LABL> labels = new List<LABL>();
+        public string path = "";
 
         public GEDCOMFile(string filename)
         {
+            path = filename;
             // First Read the file
             ReadFile(filename);
 
             // Now you have read the file, parse the records to get the data
             ParseINDI();
             ParseFAM();
-
-            // Now link the records
+            ParseLABL();
         }
 
         private void ParseINDI()
@@ -90,14 +90,103 @@ namespace GEDCOM
                 }
             }
         }
-
-        public void ListNotUsed(StringBuilder report, CONFIG appConfig)
+        private void ParseLABL()
         {
-            foreach (var person in people)
+            foreach (var label in labels)
             {
-                if ( !person.reportIncluded)
+                label.Parse();
+            }
+        }
+
+        public void SetIgnoredDescendents(string flagTitle)
+        {
+            string flagId = null;
+            List<FAM> ignoreFamilyDescendents = null;
+            // Get the code for the flag title
+            flagId = labels.Find(x => x.Description.Equals(flagTitle, StringComparison.CurrentCultureIgnoreCase)).Id;
+
+            // Get a list of families which contain the @L1 flag
+            ignoreFamilyDescendents = families.FindAll(
+            delegate(FAM family)
+            {
+                return (family.Flags.Contains(flagId)); // not matched, not excluded and not bloodline
+            }
+            );
+
+            // Iterate the families who we need to ignore
+            foreach (FAM family in ignoreFamilyDescendents)
+            {
+                // Set the flag for all children of this family
+                foreach (var child in family.Children)
                 {
-                    report.AppendFormat("{2} - {0}({1}) Not included within Tree Structure {3}", person.Name, person.DOB, person.id, Environment.NewLine);                        
+                    child.person.isIgnoredDecendent = true;
+                    // But now you need to iterate their spouses and children to set the flag for them as well. This is a recursive function.
+                    SetIgnoredDescendentsAndPartner(child.person);
+
+                }
+            }
+        }
+        private void SetIgnoredDescendentsAndPartner(INDI person)
+        {
+            // Set the flag for all children of this family
+            foreach (var currentFAMS in person.FAMS)
+            {
+                // Ignore both Husband and Wife, appreciate one will have already been done. But we don't know which one was the original person, so set both.
+                currentFAMS.family.Wife?.person.isIgnoredDecendent = true;
+                currentFAMS.family.Husband?.person.isIgnoredDecendent = true;
+                // Now do all the children of this family
+                foreach (var child in currentFAMS.family.Children)
+                {
+                    child.person.isIgnoredDecendent = true;
+                    // But now you need to iterate their spouses and children to set the flag for them as well. This is a recursive function.
+                    SetIgnoredDescendentsAndPartner(child.person);
+                }
+            }
+        }
+
+        public void CopyIgnoredFamiliesToLinkedFamilies()
+        {
+            foreach (var family in families)
+            {
+                // Copy the flag to the linked family
+                family.familyMatch?.Flags = [.. family.Flags];
+            }
+        }
+
+        public void MatchFamilies(StringBuilder report)
+        {
+            foreach (var family in families)
+            {
+                // First see if there are children in the family. If there are, this is easier as
+                // children only have a single set of parents, where parents can belong to multiple families.
+                if (family.Children.Count > 0)
+                {
+                    // There are children, so use one of them to find the correct matching. Ensuring they have a person match
+                    INDI child = family.Children.Find(x=>x.person.personMatch != null)?.person;
+                    if (child != null){
+                        family.familyMatch = child.personMatch.FAMC?.family;
+                        child.personMatch.FAMC?.family.familyMatch = family;
+                    }
+                }
+
+                // Still not matched, so either there were not children, or those that were did not have matches
+                if (family.familyMatch == null)
+                {
+                    INDI husband = family.Husband?.person;
+                    INDI wife = family.Wife?.person;
+                    if (husband != null && wife != null &&husband.personMatch != null && wife.personMatch != null)
+                    {
+                        foreach (var potentialFamily in husband.personMatch.FAMS)
+                        {
+                            INDI potentialWife = potentialFamily.family.Wife?.person;
+                            if (potentialWife != null && potentialWife.personMatch.Equals(wife))
+                            {
+                                family.familyMatch = potentialFamily.family;
+                                potentialFamily.family.familyMatch = family;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -108,6 +197,11 @@ namespace GEDCOM
             foreach (var person in people)
             {
                 if (person.Name == Name) { returnPerson = person; break; }
+            }
+            if (returnPerson != null)
+            {
+                returnPerson.SetInTree();
+                returnPerson.SetBloodLine(true);
             }
             return returnPerson;
         }
@@ -129,6 +223,7 @@ namespace GEDCOM
             INDI person;
             SOUR source;
             FAM family;
+            LABL label;
             BaseEntry newRecord = null;
             BaseEntry lastRecord = null;
 
@@ -164,6 +259,11 @@ namespace GEDCOM
                                 families.Add(family);
                                 currentRecord = family;
                                 break;
+                            case "LABL":
+                                label = new LABL(line);
+                                labels.Add(label);
+                                currentRecord = label;
+                                break;
                             default:
                                 currentRecord = null;
                                 break;
@@ -176,7 +276,6 @@ namespace GEDCOM
                         if (newRecord.Type == "CONC")
                         {
                             // This is a continuation of the last record
-
                             lastRecord.appendDetails(newRecord.Details);
                             // Don't include this as a separate record
                         }

@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography.X509Certificates;
-using System.ComponentModel.Design;
 
 namespace GEDCOM
 {
@@ -27,6 +22,10 @@ namespace GEDCOM
         public List<String> Flags { get; set; }
         public INDI personMatch { get; set; } // the Matched Person
         public bool reportIncluded = false;
+        public bool isIncludedInTree = false ;
+        public bool isIgnoredDecendent = false;
+        public bool isBloodLine = false ;
+        private string isBloodLineS = null ;
 
         public INDI(string line) : base(line)
         {
@@ -60,27 +59,61 @@ namespace GEDCOM
             return stdDate;
         }
 
+        public void SetInTree()
+        {
+            // Only do this if the person is currently not defines as in the tree.
+            if (!this.isIncludedInTree)
+            {
+                //First set the current person as in the tree
+                this.isIncludedInTree = true; 
+                //Next set the Children & Partner
+                foreach(LinkFamily relationship in FAMS)
+                {
+                    // Children First
+                    foreach(LinkPerson child in relationship.family?.Children)
+                    {
+                        child.person?.SetInTree();
+                    }
+                    // Now set the Partner for this relationship
+                    relationship.family?.Wife?.person.SetInTree();
+                    relationship.family?.Husband?.person.SetInTree();
+                }
+                //Finally the Parents    
+                FAMC?.family?.Husband?.person.SetInTree();
+                FAMC?.family?.Wife?.person.SetInTree();
+            }
+        }
+        public void SetBloodLine(bool includeParents)
+        {
+            // Only do this if the person is currently not defines as in the tree.
+            if (this.isBloodLineS == null)
+            {
+                //First set the current person as in the tree
+                this.isBloodLineS = "Y";
+                this.isBloodLine = true; 
+                //Next set the Children & Partner
+                foreach(LinkFamily relationship in FAMS)
+                {
+                    // Children First
+                    foreach(LinkPerson child in relationship.family?.Children)
+                    {
+                        child.person?.SetBloodLine(false);
+                    }
+                    // Do not match the partner as they are not blood line (and any associated partner of them)
+                }
+                //Finally the Parents    
+                if (includeParents)
+                {
+                    FAMC?.family?.Husband?.person.SetBloodLine(true);
+                    FAMC?.family?.Wife?.person.SetBloodLine(true);                    
+                }
+            }
+        }
+
         public Boolean Match(INDI potentialPerson, StringBuilder report)
         {
-            // TODO: Match to include both Name and dates of birth and death.
-            // Neither have already been matched. 
-            var cultureInfo = new CultureInfo("en-GB");
-            var thisDOB = "";
-            var potentialDOB = "";
-
-            try
-            {
-                /* NEED TO STANDARDIZE THE DATE FORMAT FOR CONVERSION TO REMOVE THE EXCEPTION HANDLING */
-                thisDOB = INDI.ToStandardDate(this.DOB);
-                potentialDOB = INDI.ToStandardDate(potentialPerson.DOB);
-            }
-            catch (Exception)
-            {
-                // Failed to conver to date time so use the strings.
-                thisDOB = this.DOB;
-                potentialDOB = potentialPerson.DOB;
-            }
-            if (this.Name.Trim().ToUpper() == potentialPerson.Name.Trim().ToUpper() && thisDOB.Trim().ToUpper() == potentialDOB.Trim().ToUpper())
+            // See if they are the same
+            if (this.Equals(potentialPerson))
             {
                 // Name and Date of Birth Match - this is a match
                 // Provide a two way match
@@ -94,20 +127,59 @@ namespace GEDCOM
             }
         }
 
+        public override bool Equals(object obj)
+        {
+            INDI person = obj as INDI;
+
+            if (person == null)
+                return false; 
+
+            var cultureInfo = new CultureInfo("en-GB");
+            var thisDOB = "";
+            var potentialDOB = "";
+            
+            // Now lets see if they have a match
+            try
+            {
+                /* NEED TO STANDARDIZE THE DATE FORMAT FOR CONVERSION TO REMOVE THE EXCEPTION HANDLING */
+                thisDOB = INDI.ToStandardDate(this.DOB);
+                potentialDOB = INDI.ToStandardDate(person.DOB);
+            }
+            catch (Exception)
+            {
+                // Failed to conver to date time so use the strings.
+                thisDOB = this.DOB;
+                potentialDOB = person.DOB;
+            }
+            if (this.Name.Trim().ToUpper() == person.Name.Trim().ToUpper() && thisDOB.Trim().ToUpper() == potentialDOB.Trim().ToUpper())
+            {
+                // Name and Date of Birth Match - this is a match
+                // Provide a two way match
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public override int GetHashCode()
+        {
+            // Create hash based on content, not reference
+            var hashCode = new HashCode();
+            hashCode.Add(Name);
+            hashCode.Add(DOB);
+            return hashCode.ToHashCode();
+        }
         public void MatchIterative(INDI potentialPerson, StringBuilder report, CONFIG appConfig)
         {
-            // Stop with the debugger if we are trying to find this person
-            if (this.id == appConfig.BreakPersonId) Debugger.Break();
-
             // Only try to match if we have not done already and the person we are matching to is not already matched
             if (personMatch == null && potentialPerson.personMatch == null)
             {
-                if (this.Name.ToUpper().Contains("not set")) Debugger.Break();
                 if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("Commencing Match Iterative for {0}({1}) with {2}({3}){4}", this.Name, this.DOB, potentialPerson.Name, potentialPerson.DOB, Environment.NewLine);
+
                 //Not Matched already - Great. Check to see if this record is a match
                 if (this.Match(potentialPerson, report))
                 {
-                    if (this.Name.ToUpper() == "not set") Debugger.Break();
                     // This person is a match, to provide the two way link. 
                     this.personMatch = potentialPerson;
                     potentialPerson.personMatch = this;
@@ -134,14 +206,11 @@ namespace GEDCOM
                             }
                         }
                     }
-                    // Now trying to match the children of this person
-                    if (this.id == appConfig.BreakPersonId) Debugger.Break();
                     if (appConfig.MatchSpouse || appConfig.MatchChildren)
                     {
                         // Check first there is a family.
-                        if (this.FAMS != null && potentialPerson.FAMS != null)
+                        if (this.FAMS != null && potentialPerson.FAMS != null) // There are families
                         {
-                            //if (FAMS.Count > 1) Debugger.Break();
                             foreach (var currentFAMS in FAMS)
                             {
                                 // First need to find the matching relationshiop in the potential person.
@@ -186,6 +255,7 @@ namespace GEDCOM
 
                                             foreach (var masterChild in masterChildren)
                                             {
+                                                // You are trying to match, even though there may not be one.
                                                 foreach (var compareChild in compareChildren)
                                                 {
                                                     if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("-- Matching Child {0} ({1}) of [{2}]{3}", masterChild.person.Name, masterChild.person.id, this.Name, Environment.NewLine);
@@ -195,141 +265,15 @@ namespace GEDCOM
                                                 }
                                             }
                                         }
-                                        else if (currentFAMS.family.FlagExists(appConfig.flgIgnoreDescendents))
-                                        {
-                                            if (appConfig.loggingLevel == LogLevel.Trace) report.AppendFormat("Ignoring Descendents for family (Husband/Wife) - {0}/{1}{2}", currentFAMS.family.Husband.person.Name, currentFAMS.family.Wife.person.Name, Environment.NewLine);
-                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                // This person did not match. 
             }
-        }
-       
-        public void ReportDifferences(bool verbose, ref int MissingCount, StringBuilder personReport, CONFIG appConfig)
-        {
-            // Break if this is the person we are seeking
-            if (this.id == appConfig.BreakPersonId) Debugger.Break();
-
-            // Have we reported on this person.
-            if (!this.reportIncluded)
-            {
-                // NO So we will now. 
-                reportIncluded = true;
-                // First see if there is a matched person, If not increment the missing count.
-                // if there is a match, then just move on
-                if (personMatch == null)
-                {
-                    if (this.Name.ToUpper() == "NOT SET") Debugger.Break();
-                    //personReport.AppendFormat("No Match for : ({2})(DOB: {3}, DOD: {4}) {0}{1}", this.Name, Environment.NewLine, this.id, this.DOB, this.DOD);
-                    MissingCount++;
-                    if (MissingCount == 1)
-                    {
-                        //this is the start of someone who does not have a match.
-                        reportFamilyDifferences(verbose, ref MissingCount, personReport, appConfig);
-                        if (this.FAMC != null && this.FAMC.family != null)
-                        {
-                            //Bug: This will only validate the nearest parent/family. It needs to iterate up the tree.
-                            if (!this.FAMC.family.FlagExists(appConfig.flgIgnoreDescendents) && !this.FAMC.family.FlagExists(appConfig.flgNotBloodLine)) personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Dependents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
-                        }
-                        else
-                        {
-                            personReport.AppendFormat("Missing Person {4} - {0} ({3}) - Ancestor/Dependents {1}{2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id);
-                        }
-
-                        // Reset as we have now reported for this person.
-                        MissingCount = 0;
-                    }
-                    else //No Match, but we are counting the number
-                    {
-                        reportFamilyDifferences(verbose, ref MissingCount, personReport, appConfig);
-                    }
-
-                }
-                else // There is a match, so we dont need to count this one.
-                {
-                    // As there was a match, keep going. 
-                    reportFamilyDifferences(verbose, ref MissingCount, personReport, appConfig);
-                }
-            }
-        }
-
-        public void reportFamilyDifferences(bool verbose, ref int MissingCount, StringBuilder familyReport, CONFIG appConfig)
-        {
-            INDI partner = null;
-
-            // stop if this is the debug person. About to report their family. 
-            if (this.id == appConfig.BreakPersonId) Debugger.Break();
-            if (FAMC != null)
-            {
-                if (FAMC.family != null)
-                {
-                    // Only Proceed if this is a bloodline family
-                    if (!FAMC.family.FlagExists(appConfig.flgNotBloodLine))
-                    {
-                        // First Report Differences of the Parents
-                        FAMC.family.Husband?.person.ReportDifferences(verbose, ref MissingCount, familyReport, appConfig);
-                        FAMC.family.Wife?.person.ReportDifferences(verbose, ref MissingCount, familyReport, appConfig);
-                    }
-                    else
-                    {
-                        if (appConfig.loggingLevel == LogLevel.Trace) familyReport.AppendFormat("Ignoring Parents for family {0}({1})/{2}({3}) - NOT BLOOD LINE{4}", FAMC.family.Husband.person.Name, FAMC.family.Husband.person.DOB, FAMC.family.Wife.person.Name, FAMC.family.Wife.person.DOB, Environment.NewLine);
-                    }
-                }
-                else
-                {
-                    familyReport.AppendFormat("Invalid Family AS CHILD for {4} - {0} ({3}) - Family Not Found ({5}) {2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id, FAMC.id);
-                }
-            }
-            foreach (var currentFAMS in FAMS)
-            {
-                /* **** Validate Family is a valid one **/
-                if (currentFAMS.family != null)
-                {
-                    // Proceed if we are not ignoring descendents, and this is a bloodline
-                    if (!currentFAMS.family.FlagExists(appConfig.flgIgnoreDescendents) && !currentFAMS.family.FlagExists(appConfig.flgNotBloodLine))
-                    {
-                        // First Validate the spouse
-                        if (currentFAMS.family.Husband != null && currentFAMS.family.Wife != null)
-                        {
-                            partner = (currentFAMS.family.Husband.person == this) ? currentFAMS.family.Wife.person : currentFAMS.family.Husband.person;
-                        }
-                        partner?.ReportDifferences(verbose, ref MissingCount, familyReport, appConfig);
-
-                        // This person is a head of a family, count the children
-                        foreach (var child in currentFAMS.family.Children)
-                        {
-                            // Report any Children
-                            child.person.ReportDifferences(verbose, ref MissingCount, familyReport, appConfig);
-                        }
-                    }
-                    else
-                    {
-                        if (currentFAMS.family.FlagExists(appConfig.flgIgnoreDescendents))
-                        {
-                            if(appConfig.loggingLevel == LogLevel.Trace) familyReport.AppendFormat("Ignoring Descendents for family {0}({1})/{2}({3}){4}", currentFAMS.family.Husband.person.Name, currentFAMS.family.Husband.person.DOB, currentFAMS.family.Wife.person.Name, currentFAMS.family.Wife.person.DOB, Environment.NewLine);
-                        }
-                        else if (currentFAMS.family.FlagExists(appConfig.flgNotBloodLine))
-                        {
-                            if(appConfig.loggingLevel == LogLevel.Trace) familyReport.AppendFormat("Ignoring Descendents for family {0}({1})/{2}({3}) - NOT BLOOD LINE{4}", currentFAMS.family.Husband.person.Name, currentFAMS.family.Husband.person.DOB, currentFAMS.family.Wife.person.Name, currentFAMS.family.Wife.person.DOB, Environment.NewLine);
-                        }
-                        else
-                        {
-                            if(appConfig.loggingLevel == LogLevel.Trace) familyReport.AppendFormat("Ignoring Descendents for family {0}({1})/{2}({3}) - UNKNOWN REASON{4}", currentFAMS.family.Husband.person.Name, currentFAMS.family.Husband.person.DOB, currentFAMS.family.Wife.person.Name, currentFAMS.family.Wife.person.DOB, Environment.NewLine);
-                        }
-
-                    }
-                }
-                else
-                {
-                    // Despite there being a FAMS record, the family does not exist.
-                    // Record the issue to the log. 
-                    familyReport.AppendFormat("Invalid Family AS SPOUSE for {4} - {0} ({3}) - Family Not Found ({5}){2}", this.Name, MissingCount, Environment.NewLine, this.DOB, this.id, currentFAMS.id);
-                }
-            }
-        }
+        }       
 
         private int ParseName(int idxLine)
         {
