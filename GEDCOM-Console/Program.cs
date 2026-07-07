@@ -15,28 +15,28 @@ namespace GEDCOM_Console
             StringBuilder verboseReport = new ();
 
             // Load the master File first
-            GEDCOMFile masterFile = new(appConfig.masterFileName);
+            GEDCOMFile masterFile = new(appConfig.masterConfiguration.filePath);
 
             // Find the record for the selected person
-            INDI masterPerson = masterFile.FindPerson(appConfig.masterPersonName);
+            INDI masterPerson = masterFile.FindPerson(appConfig.baseConfiguration.MasterPerson);
         
-            // Now load the comparison File
-            GEDCOMFile comparisonFile = new (appConfig.comparisonFileName);
+            // Now load the comparison File // use the first one for the moment.
+            GEDCOMFile comparisonFile = new (appConfig.comparisonConfiguration[0].filePath);
             // Now find the comparison person record
-            INDI comparisonPerson = comparisonFile.FindPerson(appConfig.masterPersonName);
+            INDI comparisonPerson = comparisonFile.FindPerson(appConfig.baseConfiguration.MasterPerson);
 
             // We have now loaded the files and got the people to start comparing and linking.
             masterPerson.MatchIterative(comparisonPerson, verboseReport, appConfig);
             // Once we have Matched the people we can match the Families
             masterFile.MatchFamilies(verboseReport);
             
-            if (!appConfig.IncludeIgnoredDescendents){
-                masterFile.SetIgnoredDescendents(appConfig.flgIgnoreDescendents);
+            if (!appConfig.baseConfiguration.IncludeIgnoredDescendents){
+                masterFile.SetIgnoredDescendents(appConfig.baseConfiguration.IgnoreDescendents);
                 // Copy Flags for Families
                 masterFile.CopyIgnoredFamiliesToLinkedFamilies();
                 // Set the ignored descendents in the comparison file.
                 comparisonFile.labels = new List<LABL>(masterFile.labels);
-                comparisonFile.SetIgnoredDescendents(appConfig.flgIgnoreDescendents);
+                comparisonFile.SetIgnoredDescendents(appConfig.baseConfiguration.IgnoreDescendents);
             }
             /*
             ** At this point all the data has been loaded. The trees can be queried to see how they have
@@ -52,37 +52,33 @@ namespace GEDCOM_Console
             */
 
             // Now report the appropriate configuration
-            ReportConfiguration("Master File", masterFile, appConfig.MasterFileReporting, personReport);
-            ReportConfiguration("Comparison File", comparisonFile, appConfig.ComparisonFileReporting, personReport);
+            ReportConfiguration(appConfig.masterConfiguration.fileName, masterFile, appConfig.masterConfiguration.Reporting, personReport);
+            ReportConfiguration(appConfig.comparisonConfiguration[0].fileName, comparisonFile, appConfig.comparisonConfiguration[0].Reporting, personReport);
 
             personReport.AppendFormat("{0}{0}Processing Complete{0}", Environment.NewLine);
 
-            if (appConfig.loggingLevel == LogLevel.Trace)
+            if (appConfig.baseConfiguration.LogLevel == LogLevel.Trace)
             {
                 personReport.AppendFormat("{0}{0}****************** Trace Reporting ******************{0}", Environment.NewLine);
                 personReport.Append(verboseReport);
                 personReport.AppendFormat("{0}{0}****************** End of Trace Reporting ******************{0}", Environment.NewLine);
             }
 
-
-            // Only write the file if the report directory exists
-            if (Directory.Exists(Path.GetDirectoryName(appConfig.reportFileName)))
+            if (Directory.Exists(Path.GetDirectoryName(appConfig.baseConfiguration.FullReport)))
             {
                 // We have now done the comparison
-                personReport.AppendFormat("Report File Path has been updated ({0}){1}", appConfig.reportFileName, Environment.NewLine);
+                personReport.AppendFormat("Report File Path has been updated ({0}){1}", appConfig.baseConfiguration.FullReport, Environment.NewLine);
                 // Now we need to write the report out. First check the file does not exist
-                File.WriteAllText(appConfig.reportFileName, personReport.ToString());
+                File.WriteAllText(appConfig.baseConfiguration.FullReport, personReport.ToString());
             }
             else
             {
                 // We have now done the comparison, But the file path was not found. Log to the screen/console
-                personReport.AppendFormat("Report File Path was not found ({0}){1}", appConfig.reportFileName, Environment.NewLine);
+                personReport.AppendFormat("Report File Path was not found ({0}){1}", appConfig.baseConfiguration.FullReport, Environment.NewLine);
             }
-
-            // We have now done the comparison
             Console.WriteLine(personReport.ToString());
         }
-        static void ReportConfiguration(String name, GEDCOMFile file, CONFIGReporting cfg, StringBuilder report)
+        static void ReportConfiguration(String name, GEDCOMFile file, CONFIGReporting cfg, StringBuilder fullreport)
         {
             /*
             ** Summary stats
@@ -93,6 +89,7 @@ namespace GEDCOM_Console
             ** Total number to check (matched) = Total number in tree matched - total number ignored - total number not bloodline where matched
             ** Total number being checked (not matched)) = Total number in tree matched - total number ignored - total number not bloodline not matched
             */
+            StringBuilder report = new ();
             report.AppendFormat("***************  Reporting Totals for {1}  *****************{0}", Environment.NewLine, name);
             report.AppendFormat("{2} Statistics: {0}{1}", file.path, Environment.NewLine, name);
             report.AppendFormat("People Count: {0}{1}", file.people.Count, Environment.NewLine);
@@ -127,7 +124,7 @@ namespace GEDCOM_Console
             List<INDI> InTreeExcludedNotMatched = null;
             InTreeExcludedMatched = InTreeExcluded.FindAll(x=>x.personMatch != null ); // Total People in tree, excluded and not matched
             InTreeExcludedNotMatched = InTreeExcluded.FindAll(x=>x.personMatch == null ); // Total People in tree, excluded and not matched
-            report.AppendFormat("Number of people in the tree, excluded (matched : {0}, ummatched {1}){2}", InTreeExcludedMatched.Count, InTreeExcludedNotMatched.Count, Environment.NewLine);
+            report.AppendFormat("Number of people in the tree, excluded (matched : {0}, unmatched {1}){2}", InTreeExcludedMatched.Count, InTreeExcludedNotMatched.Count, Environment.NewLine);
 
             List<INDI> InTreeExcludedNotBloodLine = null;
             InTreeExcludedNotBloodLine = InTreeExcluded.FindAll(x=>!x.isBloodLine); // Total People not included in the tree
@@ -181,6 +178,24 @@ namespace GEDCOM_Console
                 foreach(INDI ancestor in notInTree)report.AppendFormat("{2} - {0} ({1}) Not in Tree{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
             }
             report.AppendFormat("{0}***************  Reporting Completed for {1}  *****************{0}{0}", Environment.NewLine, name);
+
+            // Write the file out now.
+            if (Directory.Exists(Path.GetDirectoryName(cfg.filename)))
+            {
+                // We have now done the comparison
+                report.AppendFormat("Report File Path has been updated ({0}){1}", cfg.filename, Environment.NewLine);
+                // Now we need to write the report out. First check the file does not exist
+                File.WriteAllText(cfg.filename, report.ToString());
+                // Append this to the full report
+                fullreport.Append(report);
+            }
+            else
+            {
+                // Append this to the full report
+                fullreport.Append(report);
+                // We have now done the comparison, But the file path was not found. Log to the screen/console
+                report.AppendFormat("Report File Path was not found ({0}){1}", cfg.filename, Environment.NewLine);
+            }
         }
     }
 }
