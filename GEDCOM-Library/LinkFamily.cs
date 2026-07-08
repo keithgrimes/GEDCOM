@@ -44,16 +44,16 @@ namespace GEDCOM
                     && potentialFamily.family.Wife != null)
                 {
                     // There is a husband and wife for both.
-                    if (this.family.Husband.person.Match(potentialFamily.family.Husband.person, report)
+                    if (this.family.Husband.person.Match(potentialFamily.family.Husband.person, report, loggingLevel)
                         &&
-                        this.family.Wife.person.Match(potentialFamily.family.Wife.person, report))
+                        this.family.Wife.person.Match(potentialFamily.family.Wife.person, report, loggingLevel))
                     {
 
                         returnValue = true;
                     }
-                    else if (this.family.Husband.person.Match(potentialFamily.family.Wife.person, report)
+                    else if (this.family.Husband.person.Match(potentialFamily.family.Wife.person, report, loggingLevel )
                         &&
-                        this.family.Wife.person.Match(potentialFamily.family.Husband.person, report))
+                        this.family.Wife.person.Match(potentialFamily.family.Husband.person, report, loggingLevel))
                     {
                         report.AppendFormat("WARNING: Matching Families (Husb/Wife) Current [{0}/{1}] potential [{2}/{3}] - Partners are oppositely aligned ie. Husband == Wife or Wife == Husband{4}", this.family.Husband.person.Name, this.family.Wife.person.Name, potentialFamily.family.Husband.person.Name,potentialFamily.family.Wife.person.Name, Environment.NewLine);
                         returnValue = true;
@@ -68,15 +68,15 @@ namespace GEDCOM
                     {
                         // There is only a husband to match
                         returnValue = (potentialFamily.family.Husband != null) ? 
-                            this.family.Husband.person.Match(potentialFamily.family.Husband.person, report) :
-                            this.family.Husband.person.Match(potentialFamily.family.Wife.person, report); 
+                            this.family.Husband.person.Match(potentialFamily.family.Husband.person, report, loggingLevel ) :
+                            this.family.Husband.person.Match(potentialFamily.family.Wife.person, report, loggingLevel ); 
                     }
                     else if (this.family.Wife != null)
                     {
                         // The spouse needs matching
                         returnValue = (potentialFamily.family.Wife != null) ?
-                            this.family.Wife.person.Match(potentialFamily.family.Wife.person, report) :
-                            this.family.Wife.person.Match(potentialFamily.family.Husband.person, report);
+                            this.family.Wife.person.Match(potentialFamily.family.Wife.person, report, loggingLevel ) :
+                            this.family.Wife.person.Match(potentialFamily.family.Husband.person, report, loggingLevel );
                     }
                 }
             }

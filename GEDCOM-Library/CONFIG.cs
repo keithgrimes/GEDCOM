@@ -87,7 +87,6 @@ namespace GEDCOM
         public BaseConfiguration baseConfiguration ;
         public CONFIGMasterFile masterConfiguration;
         public List<CONFIGComparisonFile> comparisonConfiguration;
-        public List<CONFIGComparisonFile> comparisonFiles = [];
 
         public CONFIG(string configFile)
         {
