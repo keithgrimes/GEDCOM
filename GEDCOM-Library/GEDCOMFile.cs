@@ -179,11 +179,14 @@ namespace GEDCOM
                         foreach (var potentialFamily in husband.personMatch.FAMS)
                         {
                             INDI potentialWife = potentialFamily.family.Wife?.person;
-                            if (potentialWife != null && potentialWife.personMatch.Equals(wife))
+                            if (potentialWife != null && potentialWife.personMatch != null)
                             {
-                                family.familyMatch = potentialFamily.family;
-                                potentialFamily.family.familyMatch = family;
-                                break;
+                                if(potentialWife.personMatch.Equals(wife))
+                                {
+                                    family.familyMatch = potentialFamily.family;
+                                    potentialFamily.family.familyMatch = family;
+                                    break;
+                                }
                             }
                         }
                     }
