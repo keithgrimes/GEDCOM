@@ -58,7 +58,7 @@ namespace GEDCOM
                     stdDate = srcDate;
                 }
             }
-            return stdDate;
+            return INDI.stdDate(stdDate);
         }
 
         public void SetInTree()
