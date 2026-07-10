@@ -173,41 +173,41 @@ public class Comparison
 
         if (cfg.reportIncludedinTreeNotMatched)
         {
-            report.AppendFormat("***************  People who are in tree, included and not matched ({1})*****************{0}{0}", Environment.NewLine, InTreeIncludedNotMatched.Count);
-            foreach(INDI ancestor in InTreeIncludedNotMatched)report.AppendFormat("{2} - {0} ({1}) Not matched{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+            report.AppendFormat("{0}***************  People who are in tree, included and not matched ({1})*****************{0}{0}", Environment.NewLine, InTreeIncludedNotMatched.Count);
+            foreach(INDI ancestor in InTreeIncludedNotMatched)report.AppendFormat("{2} - {0} ({1}) Not matched{3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);
         }
 
         if (cfg.reportFailedAttemptedMatches)
         {
-            report.AppendFormat("***************  People who are in tree, are included but not matched and we failed an attempted match ({1})*****************{0}{0}", Environment.NewLine, failedMatches.Count);
-            foreach(INDI ancestor in failedMatches)report.AppendFormat("{2} - {0} ({1}) Match Attempted but Failed{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+            report.AppendFormat("{0}***************  People who are in tree, are included but not matched and we failed an attempted match ({1})*****************{0}{0}", Environment.NewLine, failedMatches.Count);
+            foreach(INDI ancestor in failedMatches)report.AppendFormat("{2} - {0} ({1}) Match Attempted but Failed{3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);
         }
 
         if (cfg.reportExcludedAndNotBloodLine)
         {
-            report.AppendFormat("***************  People who are in tree, Excluded due to Ignored and not Blood Line ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedBloodLineAndIgnored.Count);
-            foreach(INDI ancestor in InTreeExcludedBloodLineAndIgnored)report.AppendFormat("{2} - {0} ({1}) Ignored & Not Blood Line {3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);                
+            report.AppendFormat("{0}***************  People who are in tree, Excluded due to Ignored and not Blood Line ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedBloodLineAndIgnored.Count);
+            foreach(INDI ancestor in InTreeExcludedBloodLineAndIgnored)report.AppendFormat("{2} - {0} ({1}) Ignored & Not Blood Line {3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);                
         }
 
         if (cfg.reportExcluded)
         {
-            report.AppendFormat("***************  People who are in tree, Excluded due to Selection ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedIgnored.Count);
-            foreach(INDI ancestor in InTreeExcludedIgnored)report.AppendFormat("{2} - {0} ({1}) Ignored Only due to Selection (flagged) {3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);                
+            report.AppendFormat("{0}***************  People who are in tree, Excluded due to Selection ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedIgnored.Count);
+            foreach(INDI ancestor in InTreeExcludedIgnored)report.AppendFormat("{2} - {0} ({1}) Ignored Only due to Selection (flagged) {3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);                
         }
 
         if (cfg.reportNotBloodLine)
         {
-            report.AppendFormat("***************  People who are in tree, Excluded due not being of Blood Line ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedNotBloodLine.Count);
-            foreach(INDI ancestor in InTreeExcludedNotBloodLine)report.AppendFormat("{2} - {0} ({1}) Ignored Only due to Selection (flagged) {3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);                
+            report.AppendFormat("{0}***************  People who are in tree, Excluded due not being of Blood Line ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedNotBloodLine.Count);
+            foreach(INDI ancestor in InTreeExcludedNotBloodLine)report.AppendFormat("{2} - {0} ({1}) Ignored Only due to Selection (flagged) {3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);                
         }
         if (cfg.reportNotIncludedinTree)
         {
-            report.AppendFormat("***************  People who are NOT in tree ({1})*****************{0}{0}", Environment.NewLine, notInTree.Count);
-            foreach(INDI ancestor in notInTree)report.AppendFormat("{2} - {0} ({1}) Not in Tree{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+            report.AppendFormat("{0}***************  People who are NOT in tree ({1})*****************{0}{0}", Environment.NewLine, notInTree.Count);
+            foreach(INDI ancestor in notInTree)report.AppendFormat("{2} - {0} ({1}) Not in Tree{3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);
         }
         if (cfg.reportDateOfDeathMismatch)
         {
-            report.AppendFormat("***************  People who are InTree, Matched but Date of Death is not the same ({1})*****************{0}{0}", Environment.NewLine, DateOfDeathMismatch.Count);
+            report.AppendFormat("{0}***************  People who are InTree, Matched but Date of Death is not the same ({1})*****************{0}{0}", Environment.NewLine, DateOfDeathMismatch.Count);
             foreach(INDI ancestor in DateOfDeathMismatch)report.AppendFormat("{0} - {1} ({2} vs {3}) Date of Death does not match{4}",ancestor.id, ancestor.Name, INDI.stdDate(ancestor.DOD) ?? "null", INDI.stdDate(ancestor.personMatch.DOD) ?? "null", Environment.NewLine);            
         }
         report.AppendFormat("{0}***************  Reporting Completed for {1}  *****************{0}{0}", Environment.NewLine, name);

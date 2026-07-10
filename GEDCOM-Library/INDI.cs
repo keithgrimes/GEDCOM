@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using Microsoft.VisualBasic;
 
 namespace GEDCOM
 {
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public class INDI : EntryList
+    public partial class INDI : EntryList
     {
 
         public string id { get; }
@@ -464,38 +465,59 @@ namespace GEDCOM
         {
             switch (sMonth.ToUpper())
             {
+                case "1":
+                case "01":
                 case "JAN":
                 case "JANUARY" : 
                     sMonth = "January"; break;
+                case "2":
+                case "02":
                 case "FEB":
                 case "FEBRUARY" : 
                     sMonth = "February"; break;
+                case "3":
+                case "03":
                 case "MAR":
                 case "MARCH" : 
                     sMonth = "March"; break;
+                case "4":
+                case "04":
                 case "APR":
                 case "APRIL" : 
                     sMonth = "April"; break;
+                case "5":
+                case "05":
                 case "MAY":
                     sMonth = "May"; break;
+                case "6":
+                case "06":
                 case "JUN":
                 case "JUNE":
                     sMonth = "June"; break;
+                case "7":
+                case "07":
                 case "JUL":
                 case "JULY" : 
                     sMonth = "July"; break;
+                case "8":
+                case "08":
                 case "AUG":
                 case "AUGUST" : 
                     sMonth = "August"; break;
+                case "9":
+                case "09":
                 case "SEP":
                 case "SEPTEMBER" : 
                     sMonth = "September"; break;
+                case "10":
                 case "OCT":
                 case "OCTOBER" : 
                     sMonth = "October"; break;
+                case "11":
                 case "NOV":
                 case "NOVEMBER" : 
                     sMonth = "November"; break;
+                case "12":
                 case "DEC":
                 case "DECEMBER" : 
                     sMonth = "December"; break;
@@ -504,7 +526,7 @@ namespace GEDCOM
 
             return sMonth;
         }
-        static public String stdDate(String dt)
+        static public String stdDate2(String dt)
         {
             if (dt != null)
             {
@@ -563,6 +585,149 @@ namespace GEDCOM
                 return null;
             }
         }
+
+        public static bool ContainsAny(string source, string[] values)
+        {
+            foreach (var x in values) if (source.ToUpper().Contains(x.ToUpper(), StringComparison.CurrentCulture)) return true;
+            return false;
+        }
+        public static string RemoveAny(string source, string[] values)
+        {
+            string result = source;
+            foreach (var x in values)
+            {
+                if (source.ToUpper().Contains(x.ToUpper(), StringComparison.CurrentCulture))
+                {
+                    result = source.ToUpper().Replace(x.ToUpper(), "");                    
+                }
+                
+            }
+            return result;
+        }
+
+        static public String stdDateDDMMYYYY(String dt)
+        {
+            string[] parts;
+            string output = "";
+
+            string sMonth ;
+            int nMonth;
+            string sYear;
+            int nYear;
+            string sDay;
+            int nDay;
+
+            try
+            {
+                parts = dt.Split("/");
+                switch (parts.Length)
+                {
+                    case 3: 
+                        // This is a full Date dd/mm/yyyy
+                        sYear = parts[2];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts [1];
+                        if (int.TryParse(sMonth, out nMonth)) sMonth = nMonth.ToString();
+                        sDay = parts [0];
+                        if (int.TryParse(sDay, out nDay)) sDay = nDay.ToString();
+                        output = String.Concat(sDay.Trim(), " ", stdMonth(sMonth), " ", sYear.Trim());
+                        break;
+
+                    case 2:
+                        // This is just Month/Year 
+                        sYear = parts[1];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts [0];
+                        if (int.TryParse(sMonth, out nMonth)) sMonth = nMonth.ToString();
+                        output = String.Concat(stdMonth(sMonth), " ", sYear.Trim());
+                        break ;
+                    default:
+                        output = dt; // Did not match so return what was input.
+                        break;
+                }                
+            }
+            catch (Exception)
+            {
+                // There was a problem, so return the original value
+                output = dt;
+            }
+            return output;
+        }
+
+        static public String stdDateDDMMMYYYY(String dt)
+        {
+            string[] parts;
+            string output = "";
+
+            string sMonth ;
+            string sYear;
+            int nYear;
+            string sDay;
+            int nDay;
+
+            try
+            {
+                parts = dt.Split(" ");
+                switch (parts.Length)
+                {
+                    case 3: 
+                        // This is a full Date dd/mm/yyyy
+                        sYear = parts[2];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts[1].Trim();
+                        sDay = parts[0];
+                        if (int.TryParse(sDay, out nDay)) sDay = nDay.ToString();
+                        output = String.Concat(sDay.Trim(), " ", stdMonth(sMonth), " ", sYear.Trim());
+                        break;
+
+                    case 2:
+                        // This is just Month Year 
+                        sYear = parts[1];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts [0];
+                        output = String.Concat(stdMonth(sMonth), " ", sYear.Trim());
+                        break ;
+                    default:
+                        output = dt; // Did not match so return what was input.
+                        break;
+                }                
+            }
+            catch (Exception)
+            {
+                // There was a problem, so return the original value
+                output = dt;
+            }
+            return output;
+        }
+
+        static public String stdDate(String dt)
+        {
+            if (dt != null)
+            {
+                string output = "";
+
+                // Ensure we don't have any of the prefixes
+                dt = MyRegex().Replace(dt, " "); // Remove any additional whitespace
+                INDI.RemoveAny(dt, ["Abt", "Abt.", "About", "Circa"]);                    
+                
+                // First determine if the form dd/mm/yyyy etc.
+                if (dt.Contains('/'))
+                {
+                    // Parse the specific date format
+                    output = stdDateDDMMYYYY(dt);
+                }
+                else // Assume a standard form of date dd MMMM yyyy
+                {
+                    output = stdDateDDMMMYYYY(dt);
+                }
+
+                return output;                
+            }
+            else
+            {
+                return "";
+            }
+        }
         public void Parse()
         {
             BaseEntry line = null;
@@ -607,5 +772,8 @@ namespace GEDCOM
                 return String.Format("{0} {1} ({2})", id,Name, DOB);
             }
         }
+
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex MyRegex();
     }
 }
