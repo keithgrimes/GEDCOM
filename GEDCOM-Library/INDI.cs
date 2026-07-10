@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using Microsoft.VisualBasic;
 
 namespace GEDCOM
 {
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public class INDI : EntryList
+    public partial class INDI : EntryList
     {
 
         public string id { get; }
@@ -25,6 +26,7 @@ namespace GEDCOM
         public bool isIncludedInTree = false ;
         public bool isIgnoredDecendent = false;
         public bool isBloodLine = false ;
+        public bool matchAttempted = false;
         private string isBloodLineS = null ;
 
         public INDI(string line) : base(line)
@@ -112,6 +114,9 @@ namespace GEDCOM
 
         public Boolean Match(INDI potentialPerson, StringBuilder report, LogLevel logLevel)
         {
+            // We have tried to match this person, so record it (and the potential person)
+            this.matchAttempted = true;
+            potentialPerson.matchAttempted = true;
             // See if they are the same
             if (this.Equals(potentialPerson))
             {
@@ -447,7 +452,7 @@ namespace GEDCOM
             }
             // Finished reading the information
             // Store the values found            
-            if (DOD == "" || bPreferred)
+            if (DOD == null || DOD == "" || bPreferred)
             {
                 // Update if there is no value or if the preferred value has been found
                 DOD = stdDate(sDATE) ;
@@ -456,42 +461,63 @@ namespace GEDCOM
 
             return idxLine-1;
         }
-        public String stdMonth(String sMonth)
+        static public String stdMonth(String sMonth)
         {
             switch (sMonth.ToUpper())
             {
+                case "1":
+                case "01":
                 case "JAN":
                 case "JANUARY" : 
                     sMonth = "January"; break;
+                case "2":
+                case "02":
                 case "FEB":
                 case "FEBRUARY" : 
                     sMonth = "February"; break;
+                case "3":
+                case "03":
                 case "MAR":
                 case "MARCH" : 
                     sMonth = "March"; break;
+                case "4":
+                case "04":
                 case "APR":
                 case "APRIL" : 
                     sMonth = "April"; break;
+                case "5":
+                case "05":
                 case "MAY":
                     sMonth = "May"; break;
+                case "6":
+                case "06":
                 case "JUN":
                 case "JUNE":
                     sMonth = "June"; break;
+                case "7":
+                case "07":
                 case "JUL":
                 case "JULY" : 
                     sMonth = "July"; break;
+                case "8":
+                case "08":
                 case "AUG":
                 case "AUGUST" : 
                     sMonth = "August"; break;
+                case "9":
+                case "09":
                 case "SEP":
                 case "SEPTEMBER" : 
                     sMonth = "September"; break;
+                case "10":
                 case "OCT":
                 case "OCTOBER" : 
                     sMonth = "October"; break;
+                case "11":
                 case "NOV":
                 case "NOVEMBER" : 
                     sMonth = "November"; break;
+                case "12":
                 case "DEC":
                 case "DECEMBER" : 
                     sMonth = "December"; break;
@@ -500,57 +526,207 @@ namespace GEDCOM
 
             return sMonth;
         }
-        public String stdDate(String dt)
+        static public String stdDate2(String dt)
         {
-            string[] parts = dt.Split(" ") ;
-            string output = "";
-            if (parts.Length == 3) // This is a full date
+            if (dt != null)
             {
-                String sday = parts[0];
-                String sMonth = parts[1];
-                String sYear = parts[2];
-
-                // Standardise the Month
-                sMonth = stdMonth(sMonth);
-
-                if (sday.ToUpper() == "ABT" || sday.ToUpper() == "ABOUT")
+                string[] parts = dt.Split(" ") ;
+                string output = "";
+                if (parts.Length == 3) // This is a full date
                 {
-                    sday = "";
-                } else
-                {
-                    int day ; 
-                    bool canParse = int.TryParse(sday, out day);
-                    if (canParse)
+                    String sday = parts[0];
+                    String sMonth = parts[1];
+                    String sYear = parts[2];
+
+                    // Standardise the Month
+                    sMonth = stdMonth(sMonth);
+
+                    if (sday.ToUpper() == "ABT" || sday.ToUpper() == "ABOUT")
                     {
-                        sday = day.ToString();
+                        sday = "";
+                    } else
+                    {
+                        int day ; 
+                        bool canParse = int.TryParse(sday, out day);
+                        if (canParse)
+                        {
+                            sday = day.ToString();
+                        }
                     }
-                }
-                output = sday + " " + sMonth + " " + sYear;
-                output = output.Trim();
+                    output = sday + " " + sMonth + " " + sYear;
+                    output = output.Trim();
 
-            } else if (parts.Length == 2)
-            {
-                // Assumed to be Month & Year
-                String sMonth = parts[0];
-                String sYear = parts[1];
-                // Standardise the Month
-
-                sMonth = stdMonth(sMonth);
-
-                if (sMonth.ToUpper() == "ABT" || sMonth.ToUpper() == "ABOUT")
+                } else if (parts.Length == 2)
                 {
-                    sMonth = "";
-                }
-                output = sMonth + " " + sYear;
-                output = output.Trim();
-            } else 
-            {
-                // Only one part so use it
-                output = parts[0];
-            }
-            output = Regex.Replace(output, @"\s+", " "); // Remove any additional whitespace
+                    // Assumed to be Month & Year
+                    String sMonth = parts[0];
+                    String sYear = parts[1];
+                    // Standardise the Month
 
+                    sMonth = stdMonth(sMonth);
+
+                    if (sMonth.ToUpper() == "ABT" || sMonth.ToUpper() == "ABOUT")
+                    {
+                        sMonth = "";
+                    }
+                    output = sMonth + " " + sYear;
+                    output = output.Trim();
+                } else 
+                {
+                    // Only one part so use it
+                    output = parts[0];
+                }
+                output = Regex.Replace(output, @"\s+", " "); // Remove any additional whitespace
+
+                return output;                
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static bool ContainsAny(string source, string[] values)
+        {
+            foreach (var x in values) if (source.ToUpper().Contains(x.ToUpper(), StringComparison.CurrentCulture)) return true;
+            return false;
+        }
+        public static string RemoveAny(string source, string[] values)
+        {
+            string result = source;
+            foreach (var x in values)
+            {
+                if (source.ToUpper().Contains(x.ToUpper(), StringComparison.CurrentCulture))
+                {
+                    result = source.ToUpper().Replace(x.ToUpper(), "");                    
+                }
+                
+            }
+            return result;
+        }
+
+        static public String stdDateDDMMYYYY(String dt)
+        {
+            string[] parts;
+            string output = "";
+
+            string sMonth ;
+            int nMonth;
+            string sYear;
+            int nYear;
+            string sDay;
+            int nDay;
+
+            try
+            {
+                parts = dt.Split("/");
+                switch (parts.Length)
+                {
+                    case 3: 
+                        // This is a full Date dd/mm/yyyy
+                        sYear = parts[2];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts [1];
+                        if (int.TryParse(sMonth, out nMonth)) sMonth = nMonth.ToString();
+                        sDay = parts [0];
+                        if (int.TryParse(sDay, out nDay)) sDay = nDay.ToString();
+                        output = String.Concat(sDay.Trim(), " ", stdMonth(sMonth), " ", sYear.Trim());
+                        break;
+
+                    case 2:
+                        // This is just Month/Year 
+                        sYear = parts[1];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts [0];
+                        if (int.TryParse(sMonth, out nMonth)) sMonth = nMonth.ToString();
+                        output = String.Concat(stdMonth(sMonth), " ", sYear.Trim());
+                        break ;
+                    default:
+                        output = dt; // Did not match so return what was input.
+                        break;
+                }                
+            }
+            catch (Exception)
+            {
+                // There was a problem, so return the original value
+                output = dt;
+            }
             return output;
+        }
+
+        static public String stdDateDDMMMYYYY(String dt)
+        {
+            string[] parts;
+            string output = "";
+
+            string sMonth ;
+            string sYear;
+            int nYear;
+            string sDay;
+            int nDay;
+
+            try
+            {
+                parts = dt.Split(" ");
+                switch (parts.Length)
+                {
+                    case 3: 
+                        // This is a full Date dd/mm/yyyy
+                        sYear = parts[2];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts[1].Trim();
+                        sDay = parts[0];
+                        if (int.TryParse(sDay, out nDay)) sDay = nDay.ToString();
+                        output = String.Concat(sDay.Trim(), " ", stdMonth(sMonth), " ", sYear.Trim());
+                        break;
+
+                    case 2:
+                        // This is just Month Year 
+                        sYear = parts[1];
+                        if (int.TryParse(sYear, out nYear)) sYear = nYear.ToString();
+                        sMonth = parts [0];
+                        output = String.Concat(stdMonth(sMonth), " ", sYear.Trim());
+                        break ;
+                    default:
+                        output = dt; // Did not match so return what was input.
+                        break;
+                }                
+            }
+            catch (Exception)
+            {
+                // There was a problem, so return the original value
+                output = dt;
+            }
+            return output;
+        }
+
+        static public String stdDate(String dt)
+        {
+            if (dt != null)
+            {
+                string output = "";
+
+                // Ensure we don't have any of the prefixes
+                dt = MyRegex().Replace(dt, " "); // Remove any additional whitespace
+                INDI.RemoveAny(dt, ["Abt", "Abt.", "About", "Circa"]);                    
+                
+                // First determine if the form dd/mm/yyyy etc.
+                if (dt.Contains('/'))
+                {
+                    // Parse the specific date format
+                    output = stdDateDDMMYYYY(dt);
+                }
+                else // Assume a standard form of date dd MMMM yyyy
+                {
+                    output = stdDateDDMMMYYYY(dt);
+                }
+
+                return output;                
+            }
+            else
+            {
+                return "";
+            }
         }
         public void Parse()
         {
@@ -596,5 +772,8 @@ namespace GEDCOM
                 return String.Format("{0} {1} ({2})", id,Name, DOB);
             }
         }
+
+        [GeneratedRegex(@"\s+")]
+        private static partial Regex MyRegex();
     }
 }
