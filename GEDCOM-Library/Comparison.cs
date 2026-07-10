@@ -115,6 +115,7 @@ public class Comparison
         report.AppendFormat("Number of families in the file (Matched : {0}, Not Matched : {1}){2}", famMatched.Count, famNotMatched.Count, Environment.NewLine);
 
 
+
         List<INDI> inTree = null;
         List<INDI> notInTree = null;
         inTree = file.people.FindAll(x=>x.isIncludedInTree); // Total People included in the tree
@@ -132,6 +133,14 @@ public class Comparison
         InTreeIncludedMatched = InTreeIncluded.FindAll(x=>x.personMatch != null ); // Total People not included in the tree
         InTreeIncludedNotMatched = InTreeIncluded.FindAll(x=>x.personMatch == null ); // Total People not included in the tree
         report.AppendFormat("Number of people in the tree, included (matched : {0}, unmatched {1}){2}", InTreeIncludedMatched.Count, InTreeIncludedNotMatched.Count, Environment.NewLine);
+
+        List<INDI> failedMatches = InTreeIncluded.FindAll(x=>x.matchAttempted && x.personMatch == null);
+        List<INDI> noMatchAttempted = InTreeIncluded.FindAll(x=>!x.matchAttempted);
+        report.AppendFormat("Number of people in the tree, included, Unmatched (Match Attempted : {0}, Match Not Attempted : {1}){2}", failedMatches.Count, noMatchAttempted.Count, Environment.NewLine);
+
+        List<INDI> DateOfDeathMismatch = InTreeIncludedMatched.FindAll(x=>INDI.stdDate(x.DOD) != INDI.stdDate(x.personMatch.DOD));
+        report.AppendFormat("Number of people in the tree, included, Matched but Date of Death does not match ({0}){1}", DateOfDeathMismatch.Count, Environment.NewLine);
+
 
         List<INDI> InTreeExcludedMatched = null;
         List<INDI> InTreeExcludedNotMatched = null;
@@ -168,6 +177,12 @@ public class Comparison
             foreach(INDI ancestor in InTreeIncludedNotMatched)report.AppendFormat("{2} - {0} ({1}) Not matched{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
         }
 
+        if (cfg.reportFailedAttemptedMatches)
+        {
+            report.AppendFormat("***************  People who are in tree, are included but not matched and we failed an attempted match ({1})*****************{0}{0}", Environment.NewLine, failedMatches.Count);
+            foreach(INDI ancestor in failedMatches)report.AppendFormat("{2} - {0} ({1}) Match Attempted but Failed{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+        }
+
         if (cfg.reportExcludedAndNotBloodLine)
         {
             report.AppendFormat("***************  People who are in tree, Excluded due to Ignored and not Blood Line ({1})*****************{0}{0}", Environment.NewLine, InTreeExcludedBloodLineAndIgnored.Count);
@@ -189,6 +204,11 @@ public class Comparison
         {
             report.AppendFormat("***************  People who are NOT in tree ({1})*****************{0}{0}", Environment.NewLine, notInTree.Count);
             foreach(INDI ancestor in notInTree)report.AppendFormat("{2} - {0} ({1}) Not in Tree{3}", ancestor.Name, ancestor.DOB, ancestor.id, Environment.NewLine);
+        }
+        if (cfg.reportDateOfDeathMismatch)
+        {
+            report.AppendFormat("***************  People who are InTree, Matched but Date of Death is not the same ({1})*****************{0}{0}", Environment.NewLine, DateOfDeathMismatch.Count);
+            foreach(INDI ancestor in DateOfDeathMismatch)report.AppendFormat("{0} - {1} ({2} vs {3}) Date of Death does not match{4}",ancestor.id, ancestor.Name, INDI.stdDate(ancestor.DOD) ?? "null", INDI.stdDate(ancestor.personMatch.DOD) ?? "null", Environment.NewLine);            
         }
         report.AppendFormat("{0}***************  Reporting Completed for {1}  *****************{0}{0}", Environment.NewLine, name);
 

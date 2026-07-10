@@ -25,6 +25,7 @@ namespace GEDCOM
         public bool isIncludedInTree = false ;
         public bool isIgnoredDecendent = false;
         public bool isBloodLine = false ;
+        public bool matchAttempted = false;
         private string isBloodLineS = null ;
 
         public INDI(string line) : base(line)
@@ -112,6 +113,9 @@ namespace GEDCOM
 
         public Boolean Match(INDI potentialPerson, StringBuilder report, LogLevel logLevel)
         {
+            // We have tried to match this person, so record it (and the potential person)
+            this.matchAttempted = true;
+            potentialPerson.matchAttempted = true;
             // See if they are the same
             if (this.Equals(potentialPerson))
             {
@@ -447,7 +451,7 @@ namespace GEDCOM
             }
             // Finished reading the information
             // Store the values found            
-            if (DOD == "" || bPreferred)
+            if (DOD == null || DOD == "" || bPreferred)
             {
                 // Update if there is no value or if the preferred value has been found
                 DOD = stdDate(sDATE) ;
@@ -456,7 +460,7 @@ namespace GEDCOM
 
             return idxLine-1;
         }
-        public String stdMonth(String sMonth)
+        static public String stdMonth(String sMonth)
         {
             switch (sMonth.ToUpper())
             {
@@ -500,57 +504,64 @@ namespace GEDCOM
 
             return sMonth;
         }
-        public String stdDate(String dt)
+        static public String stdDate(String dt)
         {
-            string[] parts = dt.Split(" ") ;
-            string output = "";
-            if (parts.Length == 3) // This is a full date
+            if (dt != null)
             {
-                String sday = parts[0];
-                String sMonth = parts[1];
-                String sYear = parts[2];
-
-                // Standardise the Month
-                sMonth = stdMonth(sMonth);
-
-                if (sday.ToUpper() == "ABT" || sday.ToUpper() == "ABOUT")
+                string[] parts = dt.Split(" ") ;
+                string output = "";
+                if (parts.Length == 3) // This is a full date
                 {
-                    sday = "";
-                } else
-                {
-                    int day ; 
-                    bool canParse = int.TryParse(sday, out day);
-                    if (canParse)
+                    String sday = parts[0];
+                    String sMonth = parts[1];
+                    String sYear = parts[2];
+
+                    // Standardise the Month
+                    sMonth = stdMonth(sMonth);
+
+                    if (sday.ToUpper() == "ABT" || sday.ToUpper() == "ABOUT")
                     {
-                        sday = day.ToString();
+                        sday = "";
+                    } else
+                    {
+                        int day ; 
+                        bool canParse = int.TryParse(sday, out day);
+                        if (canParse)
+                        {
+                            sday = day.ToString();
+                        }
                     }
-                }
-                output = sday + " " + sMonth + " " + sYear;
-                output = output.Trim();
+                    output = sday + " " + sMonth + " " + sYear;
+                    output = output.Trim();
 
-            } else if (parts.Length == 2)
-            {
-                // Assumed to be Month & Year
-                String sMonth = parts[0];
-                String sYear = parts[1];
-                // Standardise the Month
-
-                sMonth = stdMonth(sMonth);
-
-                if (sMonth.ToUpper() == "ABT" || sMonth.ToUpper() == "ABOUT")
+                } else if (parts.Length == 2)
                 {
-                    sMonth = "";
-                }
-                output = sMonth + " " + sYear;
-                output = output.Trim();
-            } else 
-            {
-                // Only one part so use it
-                output = parts[0];
-            }
-            output = Regex.Replace(output, @"\s+", " "); // Remove any additional whitespace
+                    // Assumed to be Month & Year
+                    String sMonth = parts[0];
+                    String sYear = parts[1];
+                    // Standardise the Month
 
-            return output;
+                    sMonth = stdMonth(sMonth);
+
+                    if (sMonth.ToUpper() == "ABT" || sMonth.ToUpper() == "ABOUT")
+                    {
+                        sMonth = "";
+                    }
+                    output = sMonth + " " + sYear;
+                    output = output.Trim();
+                } else 
+                {
+                    // Only one part so use it
+                    output = parts[0];
+                }
+                output = Regex.Replace(output, @"\s+", " "); // Remove any additional whitespace
+
+                return output;                
+            }
+            else
+            {
+                return null;
+            }
         }
         public void Parse()
         {

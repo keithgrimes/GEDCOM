@@ -10,6 +10,10 @@ namespace GEDCOM
         public bool reportExcluded { get; set;}
         public bool reportExcludedAndNotBloodLine { get; set;}
         public bool reportUnmatchedFamilies { get; set; }
+        public bool reportFailedAttemptedMatches {get; set;}
+        public bool reportDateOfDeathMismatch {get; set;}
+        public bool reportDateOfMarriageMismatch {get; set;}
+        public bool IsMasterFile {get; set;}
         public string filename {get; set;}
 
         public CONFIGReporting()
@@ -21,7 +25,12 @@ namespace GEDCOM
             reportExcluded = false;
             reportExcludedAndNotBloodLine = false;
             reportUnmatchedFamilies = false;
+            reportFailedAttemptedMatches = false;
+            reportDateOfDeathMismatch = false;
+            reportDateOfMarriageMismatch = false;
+            IsMasterFile = false;
             filename = "";
+            
         }
         private string DebuggerDisplay
         {
@@ -95,8 +104,10 @@ namespace GEDCOM
 
             // Get the master and comparison file configuration    
             baseConfiguration = config.GetSection("Configuration").Get<BaseConfiguration>();   
-            masterConfiguration = config.GetSection("masterFile").Get<CONFIGMasterFile>();     
+            masterConfiguration = config.GetSection("masterFile").Get<CONFIGMasterFile>();   
+            masterConfiguration.Reporting.IsMasterFile = true;  
             comparisonConfiguration = config.GetSection("comparisonFiles").Get<List<CONFIGComparisonFile>>();
+            foreach(CONFIGComparisonFile x in comparisonConfiguration) x.Reporting.IsMasterFile = false;
 
             // Remove any comparisons that have been excluded
             List<CONFIGComparisonFile> exclude = comparisonConfiguration.FindAll(x=>x.Include == false);
