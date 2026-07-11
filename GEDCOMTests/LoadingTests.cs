@@ -6,21 +6,15 @@ namespace GEDCOMTests;
 [TestClass]
 public sealed class LoadingTests
 {
-    static string masterFilePath = "/Users/keith/Documents/GEDCOM/Test Family Tree/Test Family Tree.ged";
-    //static string comparisonFilePath = "/Users/keith/Documents/GEDCOM/MacFamilyTree/Grimes Family Tree.ged";
-    static string comparisonPersonName = "Keith Grimes";
-
     [TestMethod]
     public void FileStructure()
     {
         // Load the configuration file
-        CONFIG appSettings = new();
-        appSettings.masterFileName = "/Users/keith/Documents/GEDCOM/Test Family Tree/Test Family Tree.ged";
-        appSettings.masterPersonName = "Keith Grimes";
+        CONFIG appSettings = new($"appsettings.json");
 
-        GEDCOMFile masterFile = new(appSettings.masterFileName);
+        GEDCOMFile masterFile = new(appSettings.masterConfiguration.filePath);
         // Find the record for the selected person
-        INDI masterPerson = masterFile.FindPerson(appSettings.masterPersonName);
+        INDI masterPerson = masterFile.FindPerson(appSettings.baseConfiguration.MasterPerson);
 
         // Define who is actually part of the tree
         masterPerson.SetInTree();
