@@ -40,27 +40,6 @@ namespace GEDCOM
             Flags = new List<String>();
         }
 
-        static String ToStandardDate(String srcDate)
-        {
-            var cultureInfo = new CultureInfo("en-GB");
-            string stdDate;
-
-            stdDate = srcDate;
-            // Only validate the date if there is one
-            if (srcDate != null)
-            {
-                if (DateTime.TryParse(srcDate, out DateTime newDate))
-                {
-                    stdDate = newDate.ToString(cultureInfo);
-                }
-                else
-                {
-                    stdDate = srcDate;
-                }
-            }
-            return INDI.stdDate(stdDate);
-        }
-
         public void SetInTree()
         {
             // Only do this if the person is currently not defines as in the tree.
@@ -147,8 +126,8 @@ namespace GEDCOM
             try
             {
                 /* NEED TO STANDARDIZE THE DATE FORMAT FOR CONVERSION TO REMOVE THE EXCEPTION HANDLING */
-                thisDOB = INDI.ToStandardDate(this.DOB);
-                potentialDOB = INDI.ToStandardDate(person.DOB);
+                thisDOB = INDI.stdDate(this.DOB);
+                potentialDOB = INDI.stdDate(person.DOB);
             }
             catch (Exception)
             {
@@ -526,71 +505,6 @@ namespace GEDCOM
 
             return sMonth;
         }
-        static public String stdDate2(String dt)
-        {
-            if (dt != null)
-            {
-                string[] parts = dt.Split(" ") ;
-                string output = "";
-                if (parts.Length == 3) // This is a full date
-                {
-                    String sday = parts[0];
-                    String sMonth = parts[1];
-                    String sYear = parts[2];
-
-                    // Standardise the Month
-                    sMonth = stdMonth(sMonth);
-
-                    if (sday.ToUpper() == "ABT" || sday.ToUpper() == "ABOUT")
-                    {
-                        sday = "";
-                    } else
-                    {
-                        int day ; 
-                        bool canParse = int.TryParse(sday, out day);
-                        if (canParse)
-                        {
-                            sday = day.ToString();
-                        }
-                    }
-                    output = sday + " " + sMonth + " " + sYear;
-                    output = output.Trim();
-
-                } else if (parts.Length == 2)
-                {
-                    // Assumed to be Month & Year
-                    String sMonth = parts[0];
-                    String sYear = parts[1];
-                    // Standardise the Month
-
-                    sMonth = stdMonth(sMonth);
-
-                    if (sMonth.ToUpper() == "ABT" || sMonth.ToUpper() == "ABOUT")
-                    {
-                        sMonth = "";
-                    }
-                    output = sMonth + " " + sYear;
-                    output = output.Trim();
-                } else 
-                {
-                    // Only one part so use it
-                    output = parts[0];
-                }
-                output = Regex.Replace(output, @"\s+", " "); // Remove any additional whitespace
-
-                return output;                
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public static bool ContainsAny(string source, string[] values)
-        {
-            foreach (var x in values) if (source.ToUpper().Contains(x.ToUpper(), StringComparison.CurrentCulture)) return true;
-            return false;
-        }
         public static string RemoveAny(string source, string[] values)
         {
             string result = source;
@@ -667,7 +581,8 @@ namespace GEDCOM
 
             try
             {
-                parts = dt.Split(" ");
+                dt = MyRegex().Replace(dt, " "); // Remove any additional whitespace
+                parts = dt.Trim().Split(" ");
                 switch (parts.Length)
                 {
                     case 3: 
@@ -708,7 +623,7 @@ namespace GEDCOM
 
                 // Ensure we don't have any of the prefixes
                 dt = MyRegex().Replace(dt, " "); // Remove any additional whitespace
-                INDI.RemoveAny(dt, ["Abt", "Abt.", "About", "Circa"]);                    
+                dt = INDI.RemoveAny(dt, ["Abt", "Abt.", "About", "Circa"]);                    
                 
                 // First determine if the form dd/mm/yyyy etc.
                 if (dt.Contains('/'))
@@ -721,7 +636,7 @@ namespace GEDCOM
                     output = stdDateDDMMMYYYY(dt);
                 }
 
-                return output;                
+                return output.Trim();                
             }
             else
             {
