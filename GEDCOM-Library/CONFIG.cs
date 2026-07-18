@@ -9,10 +9,14 @@ namespace GEDCOM
         public bool reportNotBloodLine { get; set;}
         public bool reportExcluded { get; set;}
         public bool reportExcludedAndNotBloodLine { get; set;}
-        public bool reportUnmatchedFamilies { get; set; }
         public bool reportFailedAttemptedMatches {get; set;}
         public bool reportDateOfDeathMismatch {get; set;}
         public bool reportDateOfMarriageMismatch {get; set;}
+
+        // Family flags
+        public bool reportUnmatchedFamilies { get; set; }
+        public bool reportFamiliesIncludedNotMatchedAttempted {get; set;}
+        public bool reportFamiliesMatchedChildrenCountMismatch {get; set;}
         public bool IsMasterFile {get; set;}
         public string filename {get; set;}
 
@@ -24,10 +28,14 @@ namespace GEDCOM
             reportNotBloodLine = false;
             reportExcluded = false;
             reportExcludedAndNotBloodLine = false;
-            reportUnmatchedFamilies = false;
             reportFailedAttemptedMatches = false;
             reportDateOfDeathMismatch = false;
             reportDateOfMarriageMismatch = false;
+
+
+            reportUnmatchedFamilies = false;
+            reportFamiliesMatchedChildrenCountMismatch = false;
+            reportFamiliesIncludedNotMatchedAttempted = false;
             IsMasterFile = false;
             filename = "";
             

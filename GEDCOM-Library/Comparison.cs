@@ -108,13 +108,25 @@ public class Comparison
         report.AppendFormat("People Count: {0}{1}", file.people.Count, Environment.NewLine);
         report.AppendFormat("Family Count: {0}{1}{1}", file.families.Count, Environment.NewLine);
 
-        List<FAM> famMatched = null;
-        List<FAM> famNotMatched = null;
-        famMatched = file.families.FindAll(x=>x.familyMatch != null); 
-        famNotMatched = file.families.FindAll(x=>x.familyMatch == null); // Total People not included in the tree
-        report.AppendFormat("Number of families in the file (Matched : {0}, Not Matched : {1}){2}", famMatched.Count, famNotMatched.Count, Environment.NewLine);
+        List<FAM> famIncluded = file.families.FindAll(x=>!x.ignoreDescendents); // Total People not included in the tree
+        List<FAM> famNotIncluded = file.families.FindAll(x=>x.ignoreDescendents); // Total People not included in the tree
+        report.AppendFormat("Number of families in the file (Included : {0}, Not Included : {1}){2}", famIncluded.Count, famNotIncluded.Count, Environment.NewLine);
 
+        List<FAM> famIncludedMatched = famIncluded.FindAll(x=>x.familyMatch != null); // Total People not included in the tree
+        List<FAM> famIncludedNotMatched = famIncluded.FindAll(x=>x.familyMatch == null); // Total People not included in the tree
+        report.AppendFormat("Number of families in the file Included (Matched : {0}, Not Matched : {1}){2}", famIncludedMatched.Count, famIncludedNotMatched.Count, Environment.NewLine);
 
+        List<FAM> famIncludedNotMatchedAttempted = famIncludedNotMatched.FindAll(x=>x.matchAttempted); // Total People not included in the tree
+        List<FAM> famIncludedNotMatchedNotAttempted = famIncludedNotMatched.FindAll(x=>!x.matchAttempted); // Total People not included in the tree
+        report.AppendFormat("Number of families in the file Included, Not Matched (Attempted : {0}, Not Attempted : {1}){2}", famIncludedNotMatchedAttempted.Count, famIncludedNotMatchedNotAttempted.Count, Environment.NewLine);
+
+        List<FAM> famNotIncludedMatched = famNotIncluded.FindAll(x=>x.familyMatch != null); // Total People not included in the tree
+        List<FAM> famNotIncludedNotMatched = famNotIncluded.FindAll(x=>x.familyMatch == null); // Total People not included in the tree
+        report.AppendFormat("Number of families in the file NOT Included (Matched : {0}, Not Matched : {1}){2}", famIncludedMatched.Count, famIncludedNotMatched.Count, Environment.NewLine);
+
+        List<FAM> famIncludedMatchedChildrenCountMismatch = famIncludedMatched.FindAll(x=>x.Children.Count != x.familyMatch.Children.Count); 
+        List<FAM> famIncludedMatchedChildrenCountMatched = famIncludedMatched.FindAll(x=>x.Children.Count == x.familyMatch.Children.Count); 
+        report.AppendFormat("Number of families in the file Matched, Not Ignored but with different number of Children (Matched : {0}, Not Matched : {1}){2}", famIncludedMatchedChildrenCountMatched.Count, famIncludedMatchedChildrenCountMismatch.Count, Environment.NewLine);
 
         List<INDI> inTree = null;
         List<INDI> notInTree = null;
@@ -136,7 +148,7 @@ public class Comparison
 
         List<INDI> failedMatches = InTreeIncluded.FindAll(x=>x.matchAttempted && x.personMatch == null);
         List<INDI> noMatchAttempted = InTreeIncluded.FindAll(x=>!x.matchAttempted);
-        report.AppendFormat("Number of people in the tree, included, Unmatched (Match Attempted : {0}, Match Not Attempted : {1}){2}", failedMatches.Count, noMatchAttempted.Count, Environment.NewLine);
+        report.AppendFormat("Number of people in the tree, included, Unmatched (Attempted : {0}, Not Attempted : {1}){2}", failedMatches.Count, noMatchAttempted.Count, Environment.NewLine);
 
         List<INDI> DateOfDeathMismatch = InTreeIncludedMatched.FindAll(x=>INDI.stdDate(x.DOD) != INDI.stdDate(x.personMatch.DOD));
         report.AppendFormat("Number of people in the tree, included, Matched but Date of Death does not match ({0}){1}", DateOfDeathMismatch.Count, Environment.NewLine);
@@ -167,8 +179,20 @@ public class Comparison
 
         if (cfg.reportUnmatchedFamilies)
         {
-            report.AppendFormat("***************  Families who are in tree and not matched ({1}) *****************{0}{0}", Environment.NewLine, famNotMatched.Count);
-            foreach(FAM family in famNotMatched)report.AppendFormat("{1} - ({0}) Not matched{2}", family.ToString(), family.id, Environment.NewLine);
+            report.AppendFormat("***************  Families who are in tree, included and not matched ({1}) *****************{0}{0}", Environment.NewLine, famIncludedNotMatched.Count);
+            foreach(FAM family in famIncludedNotMatched)report.AppendFormat("{1} - ({0}) Not matched{2}", family.ToString(), family.id, Environment.NewLine);
+        }
+
+        if (cfg.reportFamiliesIncludedNotMatchedAttempted)
+        {
+            report.AppendFormat("***************  Families who are in tree, included and not matched and we attempted to match ({1}) *****************{0}{0}", Environment.NewLine, famIncludedNotMatchedAttempted.Count);
+            foreach(FAM family in famIncludedNotMatchedAttempted)report.AppendFormat("{1} - ({0}) Not matched but attempted{2}", family.ToString(), family.id, Environment.NewLine);
+        }
+
+        if (cfg.reportFamiliesMatchedChildrenCountMismatch)
+        {
+            report.AppendFormat("***************  Families who are in tree, matched, not ignored but have different numbers of children({1}) *****************{0}{0}", Environment.NewLine, famIncludedMatchedChildrenCountMismatch.Count);
+            foreach(FAM family in famIncludedMatchedChildrenCountMismatch)report.AppendFormat("{1} - ({0}) Children Count Mismatched with matched family {2} - {3}{4}", family.ToString(), family.id, family.Children.Count, family.familyMatch.Children.Count, Environment.NewLine);
         }
 
         if (cfg.reportIncludedinTreeNotMatched)

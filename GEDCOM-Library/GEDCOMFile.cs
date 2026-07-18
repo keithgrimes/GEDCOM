@@ -116,6 +116,7 @@ namespace GEDCOM
             // Iterate the families who we need to ignore
             foreach (FAM family in ignoreFamilyDescendents)
             {
+                family.ignoreDescendents = true;
                 // Set the flag for all children of this family
                 foreach (var child in family.Children)
                 {

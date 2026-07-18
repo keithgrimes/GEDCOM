@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
+using System.Threading.Tasks.Dataflow;
 
 namespace GEDCOM
 {
@@ -13,6 +15,8 @@ namespace GEDCOM
         public List<LinkPerson> Children { get; set; }
         public List<String> Flags { get; set; }
         public FAM familyMatch { get; set; }
+        public bool ignoreDescendents {get; set;}
+        public bool matchAttempted {get; set;}
 
         public FAM(string line) : base(line)
         {
@@ -21,6 +25,8 @@ namespace GEDCOM
             // Initialise the Children List
             Children = new List<LinkPerson>();
             Flags = new List<String>();
+            ignoreDescendents= false;
+            matchAttempted = false;
         }
         public bool FlagExists(string flg)
         {
@@ -70,6 +76,9 @@ namespace GEDCOM
             bool husbandMatched = false;
             bool wifeMatched = false;
             if (obj is not FAM fam) return false;
+
+            matchAttempted = true;
+            fam.matchAttempted = true;
 
             // There is a Husband and Wife in this family so use this to validate
             if (this.Husband.person?.personMatch != null && this.Wife.person?.personMatch != null)

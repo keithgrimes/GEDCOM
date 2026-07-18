@@ -242,7 +242,7 @@ namespace GEDCOM
                                                 // You are trying to match, even though there may not be one.
                                                 foreach (var compareChild in compareChildren)
                                                 {
-                                                    if (appConfig.LogLevel == LogLevel.Trace) report.AppendFormat("-- Matching Child {0} ({1}) of [{2}]{3}", masterChild.person.Name, masterChild.person.id, this.Name, Environment.NewLine);
+                                                    if (appConfig.LogLevel == LogLevel.Trace) report.AppendFormat("-- Iteratively Matching Child {0} ({1}) of [{2}] with {3} {4} {5}",  masterChild.person.id, masterChild.person.Name, this.Name, compareChild.id, compareChild.person.Name, Environment.NewLine);
 
                                                     // Match the Children but don't need to match parents, as this is where we are coming from.
                                                     masterChild.person.MatchIterative(compareChild.person, report, appConfig);
@@ -255,7 +255,15 @@ namespace GEDCOM
                         }
                     }
                 }
-                // This person did not match. 
+                else
+                {
+                    if (appConfig.LogLevel == LogLevel.Trace) report.AppendFormat("This person match failed (but tried) between {0}({1}) and {2}({3}){4}", this.Name, this.DOB, potentialPerson.Name, potentialPerson.DOB, Environment.NewLine);
+                }
+            }
+            else
+            {
+                if (potentialPerson == null && appConfig.LogLevel == LogLevel.Trace) report.AppendFormat("Potential Person {2} ({3}) already matched so failed match for {0}({1}){4}", this.Name, this.DOB, potentialPerson.Name, potentialPerson.DOB, Environment.NewLine);
+                if (personMatch == null && appConfig.LogLevel == LogLevel.Trace) report.AppendFormat("This person already matched {0}({1}) this failed against {2}({3}){4}", this.Name, this.DOB, potentialPerson.Name, potentialPerson.DOB, Environment.NewLine);
             }
         }       
 
