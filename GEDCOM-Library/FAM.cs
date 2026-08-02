@@ -119,6 +119,12 @@ namespace GEDCOM
             return string.Format("{0} - {1}", strHusband, strWife);
         }
 
+        public bool isBloodline()
+        {
+            if (this.Husband?.person?.isBloodLine == true || this.Wife?.person?.isBloodLine == true) return true;
+            return false;
+        }
+
         private string DebuggerDisplay
         {
             get

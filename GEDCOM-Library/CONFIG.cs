@@ -16,6 +16,7 @@ namespace GEDCOM
         // Family flags
         public bool reportUnmatchedFamilies { get; set; }
         public bool reportFamiliesIncludedNotMatchedAttempted {get; set;}
+        public bool reportFamiliesIncludedNotMatchedAttemptedBloodLine {get; set;}
         public bool reportFamiliesMatchedChildrenCountMismatch {get; set;}
         public bool IsMasterFile {get; set;}
         public string filename {get; set;}
@@ -36,6 +37,8 @@ namespace GEDCOM
             reportUnmatchedFamilies = false;
             reportFamiliesMatchedChildrenCountMismatch = false;
             reportFamiliesIncludedNotMatchedAttempted = false;
+            reportFamiliesIncludedNotMatchedAttemptedBloodLine = false;
+
             IsMasterFile = false;
             filename = "";
             
