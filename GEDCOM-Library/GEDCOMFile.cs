@@ -203,14 +203,29 @@ namespace GEDCOM
                 {
                     if (person.personMatch != null)
                     {
-                        if (person.personMatch.DOD == null || person.personMatch.DOD == "")
+                        if(INDI.stdDate(person.personMatch?.DOD) == INDI.stdDate(person.DOD))
                         {
-                            if(INDI.stdDate(person.personMatch?.DOD) == INDI.stdDate(person.DOD))
-                            {
-                                // Ensure both Dates are flagged as matched
-                                person.DODMatch = true;
-                                person.personMatch.DODMatch = true;
-                            }
+                            // Ensure both Dates are flagged as matched
+                            person.DODMatch = true;
+                            person.personMatch.DODMatch = true;
+                        }
+                    }
+                }
+            }
+        }
+        public void MatchDOM(StringBuilder report)
+        {
+            foreach (var family in families)
+            {
+                if (family.DOMarriage != null && family.DOMarriage != "")
+                {
+                    if (family.familyMatch != null)
+                    {
+                        if(INDI.stdDate(family.familyMatch?.DOMarriage) == INDI.stdDate(family.DOMarriage))
+                        {
+                            // Ensure both Dates are flagged as matched
+                            family.DOMarriageMatch = true;
+                            family.familyMatch.DOMarriageMatch = true;
                         }
                     }
                 }

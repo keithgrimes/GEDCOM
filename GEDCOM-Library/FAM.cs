@@ -17,6 +17,8 @@ namespace GEDCOM
         public FAM familyMatch { get; set; }
         public bool ignoreDescendents {get; set;}
         public bool matchAttempted {get; set;}
+        public String DOMarriage { get; set; }
+        public bool DOMarriageMatch { get; set; }
 
         public FAM(string line) : base(line)
         {
@@ -55,6 +57,12 @@ namespace GEDCOM
                     case "LABL":
                         // This is a family label so record it.
                         this.Flags.Add(line.Details);
+                        break;
+                    case "DATE":
+                        if (line.Level == 2) // Marriage Date is at level 2  
+                        {
+                            DOMarriage = INDI.stdDate(line.Details);
+                        }
                         break;
                 }
 

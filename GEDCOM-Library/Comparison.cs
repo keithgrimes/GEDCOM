@@ -53,6 +53,7 @@ public class Comparison
         // Once we have Matched the people we can match the Families
         masterFile.MatchFamilies(report);
         masterFile.MatchDOD(report);
+        masterFile.MatchDOM(report);
         
         if (!this.baseConfiguration.IncludeIgnoredDescendents){
             masterFile.SetIgnoredDescendents(this.baseConfiguration.IgnoreDescendents);
@@ -92,14 +93,14 @@ public class Comparison
                 {
                     csvPeopleReport.AppendFormat("{0},INDI,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.comparisonFileConfig.fileName, person.id, person.GivenNames, person.Surname, INDI.stdDate(person.DOB), INDI.stdDate(person.DOD), person.personMatch?.id, person.isIncludedInTree, person.matchAttempted, person.isIgnoredDecendent, person.DODMatch, person.isBloodLine, Environment.NewLine);
                 }
-                csvFamilyReport.AppendFormat("Source,Type,Id,GivenNames,Surname,DOB,GivenNames,Surname,DOB,MatchId,Attempted,Ignored,BloodLine{0}", Environment.NewLine);
+                csvFamilyReport.AppendFormat("Source,Type,Id,GivenNames,Surname,DOB,GivenNames,Surname,DOB,MatchId,DOM,Attempted,DOMMatch,Ignored,BloodLine{0}", Environment.NewLine);
                 foreach (FAM family in masterFile.families)
                 {
-                    csvFamilyReport.AppendFormat("{0},FAM,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.masterFileConfig.fileName, family.id, family.Husband?.person?.GivenNames ?? "", family.Husband?.person?.Surname ?? "", INDI.stdDate(family.Husband?.person?.DOB ?? ""), family.Wife?.person?.GivenNames ?? "", family.Wife?.person?.Surname ?? "", INDI.stdDate(family.Wife?.person?.DOB ?? ""), family.familyMatch?.id, family.matchAttempted, family.ignoreDescendents,family.isBloodline(), Environment.NewLine);
+                    csvFamilyReport.AppendFormat("{0},FAM,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}", this.masterFileConfig.fileName, family.id, family.Husband?.person?.GivenNames ?? "", family.Husband?.person?.Surname ?? "", INDI.stdDate(family.Husband?.person?.DOB ?? ""), family.Wife?.person?.GivenNames ?? "", family.Wife?.person?.Surname ?? "", INDI.stdDate(family.Wife?.person?.DOB ?? ""), family.familyMatch?.id, family.DOMarriage ,family.matchAttempted, family.DOMarriageMatch, family.ignoreDescendents,family.isBloodline(), Environment.NewLine);
                 }
                 foreach (FAM family in comparisonFile.families)
                 {
-                    csvFamilyReport.AppendFormat("{0},FAM,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.comparisonFileConfig.fileName, family.id, family.Husband?.person?.GivenNames ?? "", family.Husband?.person?.Surname ?? "", INDI.stdDate(family.Husband?.person?.DOB ?? ""), family.Wife?.person?.GivenNames ?? "", family.Wife?.person?.Surname ?? "", INDI.stdDate(family.Wife?.person?.DOB ?? ""), family.familyMatch?.id, family.matchAttempted, family.ignoreDescendents,family.isBloodline(), Environment.NewLine);
+                    csvFamilyReport.AppendFormat("{0},FAM,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}", this.comparisonFileConfig.fileName, family.id, family.Husband?.person?.GivenNames ?? "", family.Husband?.person?.Surname ?? "", INDI.stdDate(family.Husband?.person?.DOB ?? ""), family.Wife?.person?.GivenNames ?? "", family.Wife?.person?.Surname ?? "", INDI.stdDate(family.Wife?.person?.DOB ?? ""), family.familyMatch?.id, family.DOMarriage ,family.matchAttempted, family.DOMarriageMatch, family.ignoreDescendents,family.isBloodline(), Environment.NewLine);
                 }
                 // We have now done the comparison
                 File.WriteAllText(this.comparisonFileConfig.Reporting.csvPath + "/People.csv", csvPeopleReport.ToString());
