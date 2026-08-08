@@ -116,6 +116,7 @@ namespace GEDCOM
             // Iterate the families who we need to ignore
             foreach (FAM family in ignoreFamilyDescendents)
             {
+                family.ignoreDescendents = true;
                 // Set the flag for all children of this family
                 foreach (var child in family.Children)
                 {
@@ -194,6 +195,42 @@ namespace GEDCOM
             }
         }
 
+        public void MatchDOD(StringBuilder report)
+        {
+            foreach (var person in people)
+            {
+                if (person.DOD != null && person.DOD != "")
+                {
+                    if (person.personMatch != null)
+                    {
+                        if(INDI.stdDate(person.personMatch?.DOD) == INDI.stdDate(person.DOD))
+                        {
+                            // Ensure both Dates are flagged as matched
+                            person.DODMatch = true;
+                            person.personMatch.DODMatch = true;
+                        }
+                    }
+                }
+            }
+        }
+        public void MatchDOM(StringBuilder report)
+        {
+            foreach (var family in families)
+            {
+                if (family.DOMarriage != null && family.DOMarriage != "")
+                {
+                    if (family.familyMatch != null)
+                    {
+                        if(INDI.stdDate(family.familyMatch?.DOMarriage) == INDI.stdDate(family.DOMarriage))
+                        {
+                            // Ensure both Dates are flagged as matched
+                            family.DOMarriageMatch = true;
+                            family.familyMatch.DOMarriageMatch = true;
+                        }
+                    }
+                }
+            }
+        }
         public INDI FindPerson(string Name)
         {
             INDI returnPerson = null;

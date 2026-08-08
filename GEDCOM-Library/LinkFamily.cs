@@ -38,6 +38,8 @@ namespace GEDCOM
             }
             if (this.family != null && potentialFamily.family != null)
             {
+                this.family.matchAttempted = true;
+                potentialFamily.family.matchAttempted = true;
                 if (this.family.Husband != null
                     && potentialFamily.family.Husband != null
                     && this.family.Wife != null

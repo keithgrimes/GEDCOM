@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
+using System.Threading.Tasks.Dataflow;
 
 namespace GEDCOM
 {
@@ -13,6 +15,10 @@ namespace GEDCOM
         public List<LinkPerson> Children { get; set; }
         public List<String> Flags { get; set; }
         public FAM familyMatch { get; set; }
+        public bool ignoreDescendents {get; set;}
+        public bool matchAttempted {get; set;}
+        public String DOMarriage { get; set; }
+        public bool DOMarriageMatch { get; set; }
 
         public FAM(string line) : base(line)
         {
@@ -21,6 +27,8 @@ namespace GEDCOM
             // Initialise the Children List
             Children = new List<LinkPerson>();
             Flags = new List<String>();
+            ignoreDescendents= false;
+            matchAttempted = false;
         }
         public bool FlagExists(string flg)
         {
@@ -50,6 +58,12 @@ namespace GEDCOM
                         // This is a family label so record it.
                         this.Flags.Add(line.Details);
                         break;
+                    case "DATE":
+                        if (line.Level == 2) // Marriage Date is at level 2  
+                        {
+                            DOMarriage = INDI.stdDate(line.Details);
+                        }
+                        break;
                 }
 
             }
@@ -70,6 +84,9 @@ namespace GEDCOM
             bool husbandMatched = false;
             bool wifeMatched = false;
             if (obj is not FAM fam) return false;
+
+            matchAttempted = true;
+            fam.matchAttempted = true;
 
             // There is a Husband and Wife in this family so use this to validate
             if (this.Husband.person?.personMatch != null && this.Wife.person?.personMatch != null)
@@ -108,6 +125,12 @@ namespace GEDCOM
             string strHusband = (Husband != null) ? Husband.ToString() : "*** Not Set ***";
             string strWife = (Wife != null) ? Wife.ToString() : "*** Not Set ***";
             return string.Format("{0} - {1}", strHusband, strWife);
+        }
+
+        public bool isBloodline()
+        {
+            if (this.Husband?.person?.isBloodLine == true || this.Wife?.person?.isBloodLine == true) return true;
+            return false;
         }
 
         private string DebuggerDisplay
