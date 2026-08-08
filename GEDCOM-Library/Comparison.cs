@@ -52,6 +52,7 @@ public class Comparison
         masterPerson.MatchIterative(comparisonPerson, report, this.baseConfiguration);
         // Once we have Matched the people we can match the Families
         masterFile.MatchFamilies(report);
+        masterFile.MatchDOD(report);
         
         if (!this.baseConfiguration.IncludeIgnoredDescendents){
             masterFile.SetIgnoredDescendents(this.baseConfiguration.IgnoreDescendents);
@@ -77,11 +78,39 @@ public class Comparison
                 report.AppendFormat("{0}{0}**** End of Trace Reporting ****{0}", Environment.NewLine);
             }
 
+                // Now create the csv files for manipulation
+            if (Directory.Exists(Path.GetDirectoryName(this.comparisonFileConfig.Reporting.csvPath)))
+            {
+                StringBuilder csvPeopleReport = new ();
+                StringBuilder csvFamilyReport = new ();
+                csvPeopleReport.AppendFormat("Source,Type,Id,GivenNames,Surname,DOB,DOD,MatchId,InTree,Attempted,Ignored,DODMatch,BloodLine{0}", Environment.NewLine);
+                foreach (INDI person in masterFile.people)
+                {
+                    csvPeopleReport.AppendFormat("{0},INDI,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.masterFileConfig.fileName, person.id, person.GivenNames, person.Surname, INDI.stdDate(person.DOB), INDI.stdDate(person.DOD), person.personMatch?.id, person.isIncludedInTree, person.matchAttempted, person.isIgnoredDecendent,person.DODMatch, person.isBloodLine, Environment.NewLine);
+                }
+                foreach (INDI person in comparisonFile.people)
+                {
+                    csvPeopleReport.AppendFormat("{0},INDI,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.comparisonFileConfig.fileName, person.id, person.GivenNames, person.Surname, INDI.stdDate(person.DOB), INDI.stdDate(person.DOD), person.personMatch?.id, person.isIncludedInTree, person.matchAttempted, person.isIgnoredDecendent, person.DODMatch, person.isBloodLine, Environment.NewLine);
+                }
+                csvFamilyReport.AppendFormat("Source,Type,Id,GivenNames,Surname,DOB,GivenNames,Surname,DOB,MatchId,Attempted,Ignored,BloodLine{0}", Environment.NewLine);
+                foreach (FAM family in masterFile.families)
+                {
+                    csvFamilyReport.AppendFormat("{0},FAM,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.masterFileConfig.fileName, family.id, family.Husband?.person?.GivenNames ?? "", family.Husband?.person?.Surname ?? "", INDI.stdDate(family.Husband?.person?.DOB ?? ""), family.Wife?.person?.GivenNames ?? "", family.Wife?.person?.Surname ?? "", INDI.stdDate(family.Wife?.person?.DOB ?? ""), family.familyMatch?.id, family.matchAttempted, family.ignoreDescendents,family.isBloodline(), Environment.NewLine);
+                }
+                foreach (FAM family in comparisonFile.families)
+                {
+                    csvFamilyReport.AppendFormat("{0},FAM,{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}", this.comparisonFileConfig.fileName, family.id, family.Husband?.person?.GivenNames ?? "", family.Husband?.person?.Surname ?? "", INDI.stdDate(family.Husband?.person?.DOB ?? ""), family.Wife?.person?.GivenNames ?? "", family.Wife?.person?.Surname ?? "", INDI.stdDate(family.Wife?.person?.DOB ?? ""), family.familyMatch?.id, family.matchAttempted, family.ignoreDescendents,family.isBloodline(), Environment.NewLine);
+                }
+                // We have now done the comparison
+                File.WriteAllText(this.comparisonFileConfig.Reporting.csvPath + "/People.csv", csvPeopleReport.ToString());
+                File.WriteAllText(this.comparisonFileConfig.Reporting.csvPath + "/Families.csv", csvFamilyReport.ToString());
+
+            }
+
             if (Directory.Exists(Path.GetDirectoryName(FullReportPath)))
             {
-                // We have now done the comparison
-                report.AppendFormat("Report File Path has been updated ({0}){1}", this.baseConfiguration.FullReport, Environment.NewLine);
                 // Now we need to write the report out. First check the file does not exist
+                report.AppendFormat("Report File Path has been updated ({0}){1}", this.baseConfiguration.FullReport, Environment.NewLine);
                 File.WriteAllText(FullReportPath, report.ToString());
             }
             else
@@ -108,32 +137,27 @@ public class Comparison
         report.AppendFormat("People Count: {0}{1}", file.people.Count, Environment.NewLine);
         report.AppendFormat("Family Count: {0}{1}{1}", file.families.Count, Environment.NewLine);
 
-        List<FAM> famIncluded = file.families.FindAll(x=>!x.ignoreDescendents); // Total People not included in the tree
-        List<FAM> famNotIncluded = file.families.FindAll(x=>x.ignoreDescendents); // Total People not included in the tree
-        report.AppendFormat("Families (Included : {0}, Not Included : {1}){2}", famIncluded.Count, famNotIncluded.Count, Environment.NewLine);
+        List<FAM> famMatched = file.families.FindAll(x=>x.familyMatch != null); // Number of Families which matched
+        List<FAM> famNotMatched = file.families.FindAll(x=>x.familyMatch == null); // Number of Families which did not match
+        report.AppendFormat("Families (Matched : {0}, Not Matched : {1}){2}", famMatched.Count, famNotMatched.Count, Environment.NewLine);
 
-        List<FAM> famIncludedMatched = famIncluded.FindAll(x=>x.familyMatch != null); // Total People not included in the tree
-        List<FAM> famIncludedNotMatched = famIncluded.FindAll(x=>x.familyMatch == null); // Total People not included in the tree
-        report.AppendFormat("Families Included (Matched : {0}, Not Matched : {1}) (reportUnmatchedFamilies) {2}", famIncludedMatched.Count, famIncludedNotMatched.Count, Environment.NewLine);
+        List<FAM> famNotMatchedAttempted = famNotMatched.FindAll(x=>x.matchAttempted); // Number of Families which did not match but we attempted to match
+        List<FAM> famNotMatchedNotAttempted = famNotMatched.FindAll(x=>!x.matchAttempted); // Number of Families which did not match and we did not attempt to match
+        report.AppendFormat("Families Not Matched (Attempted : {0}, Not Attempted : {1}){2}", famNotMatchedAttempted.Count, famNotMatchedNotAttempted.Count, Environment.NewLine);
 
-        List<FAM> famIncludedNotMatchedAttempted = famIncludedNotMatched.FindAll(x=>x.matchAttempted); // Total People not included in the tree
-        List<FAM> famIncludedNotMatchedAttemptedBloodLine = famIncludedNotMatchedAttempted.FindAll(x=>x.isBloodline()); // Total People not included in the tree
-        List<FAM> famIncludedNotMatchedAttemptedNotBloodLine = famIncludedNotMatchedAttempted.FindAll(x=>!x.isBloodline()); // Total People not included in the tree
-        List<FAM> famIncludedNotMatchedNotAttempted = famIncludedNotMatched.FindAll(x=>!x.matchAttempted); // Total People not included in the tree
-        report.AppendFormat("Families Included, Not Matched (Attempted : {0}, Not Attempted : {1}) (reportFamiliesIncludedNotMatchedAttempted){2}", famIncludedNotMatchedAttempted.Count, famIncludedNotMatchedNotAttempted.Count, Environment.NewLine);
-        report.AppendFormat("Families Included, Not Matched, Attempted, isBloodline (Blood Line: {0}, Not Blood Line : {1}) (reportFamiliesIncludedNotMatchedAttemptedBloodLine){2}", famIncludedNotMatchedAttemptedBloodLine.Count, famIncludedNotMatchedAttemptedNotBloodLine.Count, Environment.NewLine);
+        if (cfg.IsMasterFile)
+        {
+            List<FAM> famNotMatchedAttemptedIncluded = famNotMatchedAttempted.FindAll(x=>!x.ignoreDescendents); // Number of Families which did not match but we attempted to match and are included in the tree
+            List<FAM> famNotMatchedAttemptedNotIncluded = famNotMatchedAttempted.FindAll(x=>x.ignoreDescendents); // Number of Families which did not match but we attempted to match and are not included in the tree
+            List<FAM> famNotMatchedNotAttemptedIncluded = famNotMatchedNotAttempted.FindAll(x=>!x.ignoreDescendents); // Number of Families which did not match but we attempted to match and are included in the tree
+            List<FAM> famNotMatchedNotAttemptedNotIncluded = famNotMatchedNotAttempted.FindAll(x=>x.ignoreDescendents); // Number of Families which did not match but we attempted to match and are not included in the tree
+            report.AppendFormat("(MasterFile Only) Families Not Matched, Attempted (Included : {0}, Not Included : {1}){2}", famNotMatchedAttemptedIncluded.Count, famNotMatchedAttemptedNotIncluded.Count, Environment.NewLine);
+            report.AppendFormat("(MasterFile Only)Families Not Matched, Not Attempted (Included : {0}, Not Included : {1}){2}", famNotMatchedNotAttemptedIncluded.Count, famNotMatchedNotAttemptedNotIncluded.Count, Environment.NewLine);
+        }
 
-        List<FAM> famIncludedMatchedChildrenCountMismatch = famIncludedMatched.FindAll(x=>x.Children.Count != x.familyMatch.Children.Count); 
-        List<FAM> famIncludedMatchedChildrenCountMatched = famIncludedMatched.FindAll(x=>x.Children.Count == x.familyMatch.Children.Count); 
-        report.AppendFormat("Families Included, Matched (Children Count Same : {0}, Children Count Different : {1}) (reportFamiliesMatchedChildrenCountMismatch) {2}", famIncludedMatchedChildrenCountMatched.Count, famIncludedMatchedChildrenCountMismatch.Count, Environment.NewLine);
-
-        List<FAM> famNotIncludedMatched = famNotIncluded.FindAll(x=>x.familyMatch != null); // Total People not included in the tree
-        List<FAM> famNotIncludedNotMatched = famNotIncluded.FindAll(x=>x.familyMatch == null); // Total People not included in the tree
-        report.AppendFormat("Families NOT Included (Matched : {0}, Not Matched : {1}) (reportFamiliesNotIncluded) {2}", famNotIncludedMatched.Count, famNotIncludedNotMatched.Count, Environment.NewLine);
-
-        List<FAM> famNotIncludedBloodLine = famNotIncluded.FindAll(x=>x.isBloodline());
-        List<FAM> famNotIncludedNotBloodLine = famNotIncluded.FindAll(x=>!x.isBloodline());
-        report.AppendFormat("Families NOT Included (Blood Line: {0}, Not Blood Line : {1}) (reportFamiliesNotIncludedBloodLine) {2}", famNotIncludedBloodLine.Count, famNotIncludedNotBloodLine.Count, Environment.NewLine);
+        List<FAM> famIncludedMatchedChildrenCountMismatch = famMatched.FindAll(x=>x.Children.Count != x.familyMatch.Children.Count); 
+        List<FAM> famIncludedMatchedChildrenCountMatched = famMatched.FindAll(x=>x.Children.Count == x.familyMatch.Children.Count); 
+        report.AppendFormat("Families Included, Matched (Child Match : {0}, Child Mismatch : {1}) (reportFamiliesMatchedChildrenCountMismatch) {2}", famIncludedMatchedChildrenCountMatched.Count, famIncludedMatchedChildrenCountMismatch.Count, Environment.NewLine);
 
         List<INDI> inTree = null;
         List<INDI> notInTree = null;
@@ -141,112 +165,29 @@ public class Comparison
         notInTree = file.people.FindAll(x=>!x.isIncludedInTree); // Total People not included in the tree
         report.AppendFormat("People (InTree : {0}, NotInTree : {1}) (reportPeopleInTree) {2}", inTree.Count, notInTree.Count, Environment.NewLine);
 
-        List<INDI> InTreeIncluded = null;
-        List<INDI> InTreeExcluded = null;
-        InTreeIncluded = inTree.FindAll(x=>x.isBloodLine && !x.isIgnoredDecendent ); // Total People in the tree and included            
-        InTreeExcluded = inTree.FindAll(x=>!x.isBloodLine || x.isIgnoredDecendent ); // Total People in the tree and excluded
-        report.AppendFormat("People (Included {0}, Excluded {1}) (reportPeopleInTree) {2}", InTreeIncluded.Count, InTreeExcluded.Count, Environment.NewLine);
+        List<INDI> inTreeMatched = inTree.FindAll(x=>x.personMatch != null); // Total People in the tree and matched
+        List<INDI> inTreeNotMatched = inTree.FindAll(x=>x.personMatch == null); // Total People in the tree and not matched
+        report.AppendFormat("People inTree (Matched : {0}, Not Matched : {1}){2}", inTreeMatched.Count, inTreeNotMatched.Count, Environment.NewLine);
 
-        List<INDI> InTreeIncludedMatched = null;
-        List<INDI> InTreeIncludedNotMatched = null;
-        InTreeIncludedMatched = InTreeIncluded.FindAll(x=>x.personMatch != null ); // Total People not included in the tree
-        InTreeIncludedNotMatched = InTreeIncluded.FindAll(x=>x.personMatch == null ); // Total People not included in the tree
-        report.AppendFormat("People, included (matched : {0}, unmatched {1}) (reportPeopleIncluded) {2}", InTreeIncludedMatched.Count, InTreeIncludedNotMatched.Count, Environment.NewLine);
+        List<INDI> inTreeNotMatchedAttempted = inTreeNotMatched.FindAll(x=>x.matchAttempted); // Total People in the tree and matched and we attempted to match
+        List<INDI> inTreeNotMatchedNotAttempted = inTreeNotMatched.FindAll(x=>!x.matchAttempted); // Total People in the tree and matched and we did not attempt to match
+        report.AppendFormat("People inTree, Not Matched (Attempted : {0}, Not Attempted : {1}){2}", inTreeNotMatchedAttempted.Count, inTreeNotMatchedNotAttempted.Count, Environment.NewLine);
 
-        List<INDI> failedMatches = InTreeIncluded.FindAll(x=>x.matchAttempted && x.personMatch == null);
-        List<INDI> noMatchAttempted = InTreeIncluded.FindAll(x=>!x.matchAttempted);
-        report.AppendFormat("People, included, Unmatched (Attempted : {0}, Not Attempted : {1}) (reportFailedAttemptedMatches) {2}", failedMatches.Count, noMatchAttempted.Count, Environment.NewLine);
+        List<INDI> inTreeNotMatchedNotAttemptedIgnored = inTreeNotMatchedNotAttempted.FindAll(x=>x.isIgnoredDecendent); // Total People in the tree and not matched and we attempted to match
+        List<INDI> inTreeNotMatchedNotAttemptedNotIgnored = inTreeNotMatchedNotAttempted.FindAll(x=>!x.isIgnoredDecendent); // Total People in the tree and not matched and we did not attempt to match
+        report.AppendFormat("People inTree, Not Matched, Not Attempted (Ignored : {0}, Not Ignored : {1}){2}", inTreeNotMatchedNotAttemptedIgnored.Count, inTreeNotMatchedNotAttemptedNotIgnored.Count, Environment.NewLine);
 
-        List<INDI> DateOfDeathMismatch = InTreeIncludedMatched.FindAll(x=>INDI.stdDate(x.DOD) != INDI.stdDate(x.personMatch.DOD));
-        report.AppendFormat("People, included, Matched but Date of Death does not match ({0}) (reportDateofDeathMismatch) {1}", DateOfDeathMismatch.Count, Environment.NewLine);
+        List<INDI> inTreeNotMatchedNotAttemptedBloodline = inTreeNotMatchedNotAttempted.FindAll(x=>x.isBloodLine); // Total People in the tree and not matched and we attempted to match
+        List<INDI> inTreeNotMatchedNotAttemptedNotBloodline = inTreeNotMatchedNotAttempted.FindAll(x=>!x.isBloodLine); // Total People in the tree and not matched and we did not attempt to match
+        report.AppendFormat("People inTree, Not Matched, Not Attempted (BloodLine : {0}, Not BloodLine : {1}){2}", inTreeNotMatchedNotAttemptedBloodline.Count, inTreeNotMatchedNotAttemptedNotBloodline.Count, Environment.NewLine);
 
-
-        List<INDI> InTreeExcludedMatched = null;
-        List<INDI> InTreeExcludedNotMatched = null;
-        InTreeExcludedMatched = InTreeExcluded.FindAll(x=>x.personMatch != null ); // Total People in tree, excluded and not matched
-        InTreeExcludedNotMatched = InTreeExcluded.FindAll(x=>x.personMatch == null ); // Total People in tree, excluded and not matched
-        report.AppendFormat("People, excluded (matched : {0}, unmatched {1}) (reportIncludedinTreeNotMatched) {2}", InTreeExcludedMatched.Count, InTreeExcludedNotMatched.Count, Environment.NewLine);
-
-        List<INDI> InTreeExcludedNotBloodLine = null;
-        InTreeExcludedNotBloodLine = InTreeExcluded.FindAll(x=>!x.isBloodLine); // Total People not included in the tree
-        report.AppendFormat("People, excluded due to not Blood Line ({0}) (reportNotBloodLine) {1}", InTreeExcludedNotBloodLine.Count, Environment.NewLine);
-
-        List<INDI> InTreeExcludedIgnored = null;
-        InTreeExcludedIgnored = InTreeExcluded.FindAll(x=>x.isIgnoredDecendent); // Total People not included in the tree
-        report.AppendFormat("People, excluded due to being ignored (flag set) ({0}) (reportExcluded) {1}", InTreeExcludedIgnored.Count, Environment.NewLine);
-
-        List<INDI> InTreeExcludedBloodLineAndIgnored = null;
-        InTreeExcludedBloodLineAndIgnored = InTreeExcluded.FindAll(x=>!x.isBloodLine && x.isIgnoredDecendent); // Total People not included in the tree
-        report.AppendFormat("People, excluded due to not Blood Line and being ignored ({0}) (reportExcludedAndNotBloodLine) {1}", InTreeExcludedBloodLineAndIgnored.Count, Environment.NewLine);
-
-
+        List<INDI> inTreeMatchedDODMatch = inTreeMatched.FindAll(x=>x.DODMatch); // Total People in the tree and not matched and we attempted to match
+        List<INDI> inTreeMatchedDODMismatch = inTreeNotMatchedNotAttempted.FindAll(x=>!x.DODMatch); // Total People in the tree and not matched and we did not attempt to match
+        report.AppendFormat("People inTree, Matched (DOD Match : {0}, DOD Mismatch : {1}){2}", inTreeMatchedDODMatch.Count, inTreeMatchedDODMismatch.Count, Environment.NewLine);
         // Now list the details, but first list some counts
 
         report.AppendFormat("{0}{0}***  Generating Reports for {1}  ***{0}", Environment.NewLine, name);
 
-        if (cfg.reportUnmatchedFamilies)
-        {
-            report.AppendFormat("*** (reportUnmatchedFamilies) Families in tree, included and not matched ({1}){0}{0}", Environment.NewLine, famIncludedNotMatched.Count);
-            foreach(FAM family in famIncludedNotMatched)report.AppendFormat("{1} - {0}{2}", family.ToString(), family.id, Environment.NewLine);
-        }
-
-        if (cfg.reportFamiliesIncludedNotMatchedAttempted)
-        {
-            report.AppendFormat("*** (reportFamiliesIncludedNotMatchedAttempted) Families in tree, included and not matched and we attempted to match ({1}){0}{0}", Environment.NewLine, famIncludedNotMatchedAttempted.Count);
-            foreach(FAM family in famIncludedNotMatchedAttempted)report.AppendFormat("{1} - {0} (BloodLine: {2}){3}", family.ToString(), family.id, family.isBloodline(), Environment.NewLine);
-        }
-
-        if (cfg.reportFamiliesIncludedNotMatchedAttemptedBloodLine)
-        {
-            report.AppendFormat("*** (reportFamiliesIncludedNotMatchedAttemptedBloodLine) Families in tree, included and not matched and we attempted to match and Blood Line ({1}){0}{0}", Environment.NewLine, famIncludedNotMatchedAttemptedBloodLine.Count);
-            foreach(FAM family in famIncludedNotMatchedAttemptedBloodLine)report.AppendFormat("{1} - {0}{2}", family.ToString(), family.id, Environment.NewLine);
-        }
-
-        if (cfg.reportFamiliesMatchedChildrenCountMismatch)
-        {
-            report.AppendFormat("*** (reportFamiliesMatchedChildrenCountMismatch) Families in tree, matched, not ignored but have different numbers of children({1}){0}{0}", Environment.NewLine, famIncludedMatchedChildrenCountMismatch.Count);
-            foreach(FAM family in famIncludedMatchedChildrenCountMismatch)report.AppendFormat("{1} - {0} Children Count Mismatched with matched family {2} - {3}{4}", family.ToString(), family.id, family.Children.Count, family.familyMatch.Children.Count, Environment.NewLine);
-        }
-
-        if (cfg.reportIncludedinTreeNotMatched)
-        {
-            report.AppendFormat("{0}*** (reportIncludedinTreeNotMatched) People in tree, included and not matched ({1}){0}{0}", Environment.NewLine, InTreeIncludedNotMatched.Count);
-            foreach(INDI ancestor in InTreeIncludedNotMatched)report.AppendFormat("{2} - {0} ({1}){3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);
-        }
-
-        if (cfg.reportFailedAttemptedMatches)
-        {
-            report.AppendFormat("{0}*** (reportFailedAttemptedMatches) People in tree, are included but not matched and we failed an attempted match ({1}){0}{0}", Environment.NewLine, failedMatches.Count);
-            foreach(INDI ancestor in failedMatches)report.AppendFormat("{2} - {0} ({1}){3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);
-        }
-
-        if (cfg.reportExcludedAndNotBloodLine)
-        {
-            report.AppendFormat("{0}*** (reportExcludedAndNotBloodLine) People in tree, Excluded due to Ignored and not Blood Line ({1}){0}{0}", Environment.NewLine, InTreeExcludedBloodLineAndIgnored.Count);
-            foreach(INDI ancestor in InTreeExcludedBloodLineAndIgnored)report.AppendFormat("{2} - {0} ({1}){3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);                
-        }
-
-        if (cfg.reportExcluded)
-        {
-            report.AppendFormat("{0}*** (reportExcluded) People in tree, Excluded due to Selection (Flagged) ({1}){0}{0}", Environment.NewLine, InTreeExcludedIgnored.Count);
-            foreach(INDI ancestor in InTreeExcludedIgnored)report.AppendFormat("{2} - {0} ({1}){3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);                
-        }
-
-        if (cfg.reportNotBloodLine)
-        {
-            report.AppendFormat("{0}*** (reportNotBloodLine) People in tree, Excluded due not being of Blood Line ({1}){0}{0}", Environment.NewLine, InTreeExcludedNotBloodLine.Count);
-            foreach(INDI ancestor in InTreeExcludedNotBloodLine)report.AppendFormat("{2} - {0} ({1}){3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);                
-        }
-        if (cfg.reportNotIncludedinTree)
-        {
-            report.AppendFormat("{0}*** (reportNotIncludedinTree) People  NOT in tree ({1})***{0}{0}", Environment.NewLine, notInTree.Count);
-            foreach(INDI ancestor in notInTree)report.AppendFormat("{2} - {0} ({1}){3}", ancestor.Name, INDI.stdDate(ancestor.DOB), ancestor.id, Environment.NewLine);
-        }
-        if (cfg.reportDateOfDeathMismatch)
-        {
-            report.AppendFormat("{0}*** (reportDateOfDeathMismatch) People inTree, Matched but Date of Death is not the same ({1})***{0}{0}", Environment.NewLine, DateOfDeathMismatch.Count);
-            foreach(INDI ancestor in DateOfDeathMismatch)report.AppendFormat("{0} - {1} ({2} vs {3}){4}",ancestor.id, ancestor.Name, INDI.stdDate(ancestor.DOD) ?? "null", INDI.stdDate(ancestor.personMatch.DOD) ?? "null", Environment.NewLine);            
-        }
         report.AppendFormat("{0}*** Reporting Completed for {1} ***{0}{0}", Environment.NewLine, name);
 
         // Write the file out now.
@@ -267,5 +208,4 @@ public class Comparison
             if (cfg.filename != "") report.AppendFormat("Report File Path was not found ({0}){1}", cfg.filename, Environment.NewLine);
         }
     }
-    
 }

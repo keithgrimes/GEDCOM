@@ -195,6 +195,27 @@ namespace GEDCOM
             }
         }
 
+        public void MatchDOD(StringBuilder report)
+        {
+            foreach (var person in people)
+            {
+                if (person.DOD != null && person.DOD != "")
+                {
+                    if (person.personMatch != null)
+                    {
+                        if (person.personMatch.DOD == null || person.personMatch.DOD == "")
+                        {
+                            if(INDI.stdDate(person.personMatch?.DOD) == INDI.stdDate(person.DOD))
+                            {
+                                // Ensure both Dates are flagged as matched
+                                person.DODMatch = true;
+                                person.personMatch.DODMatch = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         public INDI FindPerson(string Name)
         {
             INDI returnPerson = null;

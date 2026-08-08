@@ -4,43 +4,16 @@ namespace GEDCOM
 {
     public class CONFIGReporting
     {
-        public bool reportIncludedinTreeNotMatched { get; set;}
-        public bool reportNotIncludedinTree { get; set;}
-        public bool reportNotBloodLine { get; set;}
-        public bool reportExcluded { get; set;}
-        public bool reportExcludedAndNotBloodLine { get; set;}
-        public bool reportFailedAttemptedMatches {get; set;}
-        public bool reportDateOfDeathMismatch {get; set;}
-        public bool reportDateOfMarriageMismatch {get; set;}
-
-        // Family flags
-        public bool reportUnmatchedFamilies { get; set; }
-        public bool reportFamiliesIncludedNotMatchedAttempted {get; set;}
-        public bool reportFamiliesIncludedNotMatchedAttemptedBloodLine {get; set;}
-        public bool reportFamiliesMatchedChildrenCountMismatch {get; set;}
         public bool IsMasterFile {get; set;}
         public string filename {get; set;}
+        public string csvPath {get; set;}
 
         public CONFIGReporting()
         {
-            // ID is going to be on the first record
-            reportIncludedinTreeNotMatched = false;
-            reportNotIncludedinTree = false;
-            reportNotBloodLine = false;
-            reportExcluded = false;
-            reportExcludedAndNotBloodLine = false;
-            reportFailedAttemptedMatches = false;
-            reportDateOfDeathMismatch = false;
-            reportDateOfMarriageMismatch = false;
-
-
-            reportUnmatchedFamilies = false;
-            reportFamiliesMatchedChildrenCountMismatch = false;
-            reportFamiliesIncludedNotMatchedAttempted = false;
-            reportFamiliesIncludedNotMatchedAttemptedBloodLine = false;
-
             IsMasterFile = false;
             filename = "";
+            csvPath = "";
+
             
         }
         private string DebuggerDisplay

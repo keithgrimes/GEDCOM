@@ -14,6 +14,8 @@ namespace GEDCOM
 
         public string id { get; }
         public string Name { get; set; }
+        public string GivenNames { get; set; }
+        public string Surname { get; set; }
         public string DOB { get; set; }
         public string originalDOB { get; set; }
         public string DOD { get; set; }
@@ -26,6 +28,7 @@ namespace GEDCOM
         public bool isIncludedInTree = false ;
         public bool isIgnoredDecendent = false;
         public bool isBloodLine = false ;
+        public bool DODMatch = false;
         public bool matchAttempted = false;
         private string isBloodLineS = null ;
 
@@ -40,6 +43,17 @@ namespace GEDCOM
             Flags = new List<String>();
         }
 
+        public string toCSV()
+        {
+            if (personMatch != null)
+            {
+                return $"{id},{GivenNames},{Surname},{DOB},{personMatch.id},{personMatch.id},{reportIncluded},{isBloodLine}";
+            }
+            else
+            {
+                return $"INDI,{id},{GivenNames},{Surname},{DOB},{personMatch.id},,{reportIncluded},{isBloodLine}";
+            }
+        }
         public void SetInTree()
         {
             // Only do this if the person is currently not defines as in the tree.
@@ -324,6 +338,14 @@ namespace GEDCOM
             // Store the values found            
             if ((Name == "" || bPreferred) && (TYPE == "" || TYPE == "MAIDEN"))
             {
+                GivenNames = GIVN.Trim();
+                GivenNames = GivenNames.Replace("/","");
+                GivenNames = Regex.Replace(GivenNames, @"\s+", " "); // Remove any additional whitespace
+
+                Surname = SURN.Trim();
+                Surname = Surname.Replace("/","");
+                Surname = Regex.Replace(Surname, @"\s+", " "); // Remove any additional whitespace  
+
                 // Update if there is no value or if the preferred value has been found
                 if (SECG == "")
                 {
@@ -336,6 +358,11 @@ namespace GEDCOM
                     Name = String.Concat(GIVN, " ", SECG, " ", SURN.Trim());
                     Name = Name.Replace("/","");
                     Name = Regex.Replace(Name, @"\s+", " "); // Remove any additional whitespace
+
+                    // Update the Given Names to include the second given name
+                    GivenNames = String.Concat(GIVN, " ", SECG);
+                    GivenNames = GivenNames.Replace("/","");
+                    GivenNames = Regex.Replace(GivenNames, @"\s+", " "); // Remove any additional whitespace
                 }
             }
             return idxLine-1;
