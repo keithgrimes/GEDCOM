@@ -2,6 +2,7 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 namespace GEDCOM
 {
@@ -70,7 +71,7 @@ namespace GEDCOM
 
         private void ParseFAM()
         {
-            foreach (var family in families)
+            foreach (FAM family in families)
             {
                 family.Parse();
                 if (family.Husband != null)
@@ -158,9 +159,29 @@ namespace GEDCOM
         {
             foreach (var family in families)
             {
+                if (family.familyMatch == null)
+                {
+                    // First see if there are parents/spouses which match. There needs to be a Husband and Wife for this to work
+                    if (family.Husband != null && family.Wife != null && family.Husband.person?.personMatch != null && family.Wife.person?.personMatch != null)
+                    {
+                        foreach (var potentialFamily in family.Husband.person?.personMatch.FAMS)
+                        {
+                            if (potentialFamily.family.Wife.person.personMatch != null)
+                            {
+                                if (potentialFamily.family.Wife.person.personMatch.Equals(family.Wife?.person))
+                                {
+                                    family.familyMatch = potentialFamily.family;
+                                    potentialFamily.family.familyMatch = family;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // First see if there are children in the family. If there are, this is easier as
                 // children only have a single set of parents, where parents can belong to multiple families.
-                if (family.Children.Count > 0)
+                if (family.familyMatch == null && family.Children.Count > 0)
                 {
                     // There are children, so use one of them to find the correct matching. Ensuring they have a person match
                     INDI child = family.Children.Find(x=>x.person.personMatch != null)?.person;
@@ -170,7 +191,7 @@ namespace GEDCOM
                     }
                 }
 
-                // Still not matched, so either there were not children, or those that were did not have matches
+                // Still not matched, so either there were no children, or those that were did not have matches
                 if (family.familyMatch == null)
                 {
                     INDI husband = family.Husband?.person;
