@@ -41,8 +41,25 @@ namespace GEDCOM
 
         public void Parse()
         {
+            String[] path = {"FAM"};
             foreach (var line in base.lines)
             {
+                //create the path;
+                if (line.Level > 0)
+                {
+                    if (path.Length == line.Level + 1) path[line.Level] = line.Type;
+                    else if (path.Length < line.Level + 1)
+                    {
+                        Array.Resize(ref path, line.Level + 1);
+                        path[line.Level] = line.Type;
+                    }
+                    else if (path.Length > line.Level + 1)
+                    {
+                        Array.Resize(ref path, line.Level + 1);
+                        path[line.Level] = line.Type;
+                    }
+                }
+
                 switch (line.Type)
                 {
                     case "HUSB":
@@ -59,7 +76,7 @@ namespace GEDCOM
                         this.Flags.Add(line.Details);
                         break;
                     case "DATE":
-                        if (line.Level == 2) // Marriage Date is at level 2  
+                        if (String.Join('/', path) == "FAM/MARR/DATE") // Marriage Date is at level 2  
                         {
                             DOMarriage = INDI.stdDate(line.Details);
                         }
@@ -124,7 +141,7 @@ namespace GEDCOM
         {
             string strHusband = (Husband != null) ? Husband.ToString() : "*** Not Set ***";
             string strWife = (Wife != null) ? Wife.ToString() : "*** Not Set ***";
-            return string.Format("{0} - {1}", strHusband, strWife);
+            return string.Format("({0}) {1} - {2}", this.id, strHusband, strWife);
         }
 
         public bool isBloodline()
