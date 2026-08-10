@@ -30,6 +30,17 @@ namespace GEDCOM
             ignoreDescendents= false;
             matchAttempted = false;
         }
+        public bool ChildCountMatch()
+        {
+            if (this.familyMatch != null)
+            {
+                if (this.Children.Count == this.familyMatch.Children.Count)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         public bool FlagExists(string flg)
         {
             foreach (string f in Flags)
