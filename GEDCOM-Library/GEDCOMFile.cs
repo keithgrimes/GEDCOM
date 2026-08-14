@@ -218,36 +218,49 @@ namespace GEDCOM
 
         public void MatchDOD(StringBuilder report)
         {
+            String DOD = "";
+            String mDOD = "";
             foreach (var person in people)
             {
-                if (person.DOD != null && person.DOD != "")
+                if (person.personMatch != null)
                 {
-                    if (person.personMatch != null)
+                    DOD = (person.DOD == null || person.DOD.Trim() == "") ? "" : person.DOD;
+                    mDOD = (person.personMatch?.DOD == null || person.personMatch?.DOD.Trim() == "") ? "" : person.personMatch?.DOD;
+                    if (DOD == mDOD)
                     {
-                        if(INDI.stdDate(person.personMatch?.DOD) == INDI.stdDate(person.DOD))
-                        {
-                            // Ensure both Dates are flagged as matched
-                            person.DODMatch = true;
-                            person.personMatch.DODMatch = true;
-                        }
+                        person.DODMatch = true;
+                        person.personMatch.DODMatch = true;
+                    }
+                    else if(INDI.stdDate(person.personMatch?.DOD) == INDI.stdDate(person.DOD))
+                    {
+                        // Ensure both Dates are flagged as matched
+                        person.DODMatch = true;
+                        person.personMatch.DODMatch = true;
                     }
                 }
             }
         }
         public void MatchDOM(StringBuilder report)
         {
+            String DOM = "";
+            String mDOM = "";
             foreach (var family in families)
             {
-                if (family.DOMarriage != null && family.DOMarriage != "")
+                if (family.familyMatch != null)
                 {
-                    if (family.familyMatch != null)
+                    DOM = (family.DOMarriage == null || family.DOMarriage.Trim() == "") ? "" : family.DOMarriage;
+                    mDOM = (family.familyMatch.DOMarriage == null || family.familyMatch.DOMarriage.Trim() == "") ? "" : family.familyMatch.DOMarriage;
+
+                    if (DOM == mDOM)
                     {
-                        if(INDI.stdDate(family.familyMatch?.DOMarriage) == INDI.stdDate(family.DOMarriage))
-                        {
-                            // Ensure both Dates are flagged as matched
-                            family.DOMarriageMatch = true;
-                            family.familyMatch.DOMarriageMatch = true;
-                        }
+                        family.DOMarriageMatch = true;
+                        family.familyMatch.DOMarriageMatch = true;
+                    }
+                    else if(INDI.stdDate(family.familyMatch?.DOMarriage) == INDI.stdDate(family.DOMarriage))
+                    {
+                        // Ensure both Dates are flagged as matched
+                        family.DOMarriageMatch = true;
+                        family.familyMatch.DOMarriageMatch = true;
                     }
                 }
             }
